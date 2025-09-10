@@ -1,8 +1,6 @@
-"use client";
-import { useState, useRef } from "react";
-import { useCreateProduct, useUpdateProduct } from "@/app/hooks/useProducts";
+import React, { useState, useRef } from "react";
 
-function ProductForm({ editingProduct, onClose }) {
+function ProductForm({ editingProduct, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: editingProduct?.name || "",
     price: editingProduct?.price || 0,
@@ -14,10 +12,20 @@ function ProductForm({ editingProduct, onClose }) {
   });
 
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef(null);
 
-  const createProduct = useCreateProduct();
-  const updateProduct = useUpdateProduct();
+  // Get API URL dynamically
+  const getApiUrl = () => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      if (hostname === "localhost" || hostname === "127.0.0.1") {
+        return "http://localhost:4000";
+      }
+      return "https://parsswim-backend-production.up.railway.app";
+    }
+    return "http://localhost:4000";
+  };
 
   const handleImageUpload = async (file) => {
     if (!file) return null;
@@ -25,42 +33,35 @@ function ProductForm({ editingProduct, onClose }) {
     setIsUploading(true);
     try {
       const formData = new FormData();
-      formData.append("image", file); // Field name matches backend expectation
-
-      // FIXED: Use dynamic API URL based on environment
-      const getApiUrl = () => {
-        if (typeof window !== "undefined") {
-          if (
-            window.location.hostname === "localhost" ||
-            window.location.hostname === "127.0.0.1"
-          ) {
-            return "http://localhost:4000";
-          }
-          return "https://parsswim-backend-production.up.railway.app";
-        }
-        return "http://localhost:4000";
-      };
+      formData.append("image", file);
 
       const apiBaseUrl = getApiUrl();
 
       const response = await fetch(`${apiBaseUrl}/upload/product`, {
         method: "POST",
         body: formData,
-        credentials: "include", // Important for session-based auth
+        credentials: "include", // CRITICAL: Include cookies for authentication
       });
 
       const result = await response.json();
 
-      if (response.ok && result.success) {
-        console.log("Upload successful:", result);
-        return result.imagePath; // Should return clean path like: /uploads/images/filename.jpg
+      if (!response.ok) {
+        throw new Error(
+          result.message || `Upload failed with status ${response.status}`
+        );
+      }
+
+      if (result.success && result.imagePath) {
+        console.log("Upload successful, path:", result.imagePath);
+        return result.imagePath;
       } else {
-        console.error("Upload failed:", result);
-        throw new Error(result.message || "Upload failed");
+        throw new Error(
+          result.message || "Upload failed - no image path returned"
+        );
       }
     } catch (error) {
       console.error("Image upload failed:", error);
-      alert("خطا در آپلود تصویر: " + error.message);
+      alert(`خطا در آپلود تصویر: ${error.message}`);
       return null;
     } finally {
       setIsUploading(false);
@@ -70,6 +71,9 @@ function ProductForm({ editingProduct, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isSaving) return;
+
+    setIsSaving(true);
     try {
       let finalProductData = { ...formData };
 
@@ -81,135 +85,212 @@ function ProductForm({ editingProduct, onClose }) {
         if (uploadedImagePath) {
           finalProductData.image = uploadedImagePath;
         } else {
-          return; // Don't proceed if upload failed
+          // Don't proceed if upload failed
+          setIsSaving(false);
+          return;
         }
       }
 
-      if (editingProduct) {
-        await updateProduct.mutateAsync({
-          id: editingProduct._id,
-          ...finalProductData,
-        });
-      } else {
-        await createProduct.mutateAsync(finalProductData);
+      const apiBaseUrl = getApiUrl();
+      const url = editingProduct
+        ? `${apiBaseUrl}/products/${editingProduct._id}`
+        : `${apiBaseUrl}/products`;
+
+      const method = editingProduct ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(finalProductData),
+        credentials: "include",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.message || `Operation failed with status ${response.status}`
+        );
       }
 
-      onClose();
+      if (result.success) {
+        alert(
+          editingProduct
+            ? "محصول با موفقیت ویرایش شد"
+            : "محصول با موفقیت اضافه شد"
+        );
 
-      // Clear file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        // Clear form
+        setFormData({
+          name: "",
+          price: 0,
+          category: "swimwear",
+          description: "",
+          image: "/images/default-product.jpg",
+          inStock: true,
+        });
+
+        // Clear file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+
+        // Call success callback if provided
+        if (onSuccess) {
+          onSuccess(result.data);
+        }
+
+        // Close form
+        if (onClose) {
+          onClose();
+        }
+      } else {
+        throw new Error(result.message || "Operation failed");
       }
     } catch (error) {
       console.error("Product operation failed:", error);
-      alert("خطا در عملیات محصول: " + (error.message || "خطای ناشناخته"));
+      alert(`خطا در عملیات محصول: ${error.message}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-      <h3 className="text-lg font-bold mb-4">
+    <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl mx-auto">
+      <h3 className="text-xl font-bold mb-4">
         {editingProduct ? "ویرایش محصول" : "محصول جدید"}
       </h3>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">نام محصول</label>
-          <input
-            type="text"
-            required
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-3 py-2 border rounded-lg"
-            placeholder="نام محصول"
-          />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">نام محصول</label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="نام محصول"
+              disabled={isSaving}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              قیمت (تومان)
+            </label>
+            <input
+              type="number"
+              required
+              min="0"
+              value={formData.price}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  price: parseInt(e.target.value) || 0,
+                })
+              }
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="قیمت"
+              disabled={isSaving}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">دسته‌بندی</label>
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isSaving}
+            >
+              <option value="swimwear">لباس شنا</option>
+              <option value="swimgoggles">عینک شنا</option>
+              <option value="swimfins">فین شنا</option>
+              <option value="swimequipment">تجهیزات شنا</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              وضعیت موجودی
+            </label>
+            <select
+              value={formData.inStock}
+              onChange={(e) =>
+                setFormData({ ...formData, inStock: e.target.value === "true" })
+              }
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isSaving}
+            >
+              <option value="true">موجود</option>
+              <option value="false">ناموجود</option>
+            </select>
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">قیمت (تومان)</label>
-          <input
-            type="number"
-            required
-            value={formData.price}
-            onChange={(e) =>
-              setFormData({ ...formData, price: parseInt(e.target.value) })
-            }
-            className="w-full px-3 py-2 border rounded-lg"
-            placeholder="قیمت"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">دسته‌بندی</label>
-          <select
-            value={formData.category}
-            onChange={(e) =>
-              setFormData({ ...formData, category: e.target.value })
-            }
-            className="w-full px-3 py-2 border rounded-lg"
-          >
-            <option value="swimwear">مایو شنا</option>
-            <option value="swimgoggles">عینک شنا</option>
-            <option value="swimfins">فین شنا</option>
-            <option value="swimequipment">تجهیزات شنا</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            آپلود تصویر
-            {isUploading && (
-              <span className="text-blue-600 text-sm"> (در حال آپلود...)</span>
-            )}
-          </label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            disabled={isUploading}
-            className="w-full px-3 py-2 border rounded-lg disabled:opacity-50"
-          />
-        </div>
-
-        <div className="col-span-2">
           <label className="block text-sm font-medium mb-2">توضیحات</label>
           <textarea
             value={formData.description}
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
             }
-            className="w-full px-3 py-2 border rounded-lg"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows="3"
-            placeholder="توضیحات محصول"
+            placeholder="توضیحات محصول (اختیاری)"
+            disabled={isSaving}
           />
         </div>
 
-        <div className="col-span-2">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={formData.inStock}
-              onChange={(e) =>
-                setFormData({ ...formData, inStock: e.target.checked })
-              }
-              className="mr-2"
-            />
-            <span className="text-sm font-medium">موجود در انبار</span>
-          </label>
+        <div>
+          <label className="block text-sm font-medium mb-2">تصویر محصول</label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isSaving || isUploading}
+          />
+          {formData.image &&
+            formData.image !== "/images/default-product.jpg" && (
+              <p className="text-sm text-gray-600 mt-1">
+                تصویر فعلی: {formData.image}
+              </p>
+            )}
         </div>
 
-        <div className="col-span-2 flex gap-4">
+        <div className="flex gap-3 pt-4">
           <button
             type="submit"
-            disabled={isUploading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg disabled:opacity-50"
+            disabled={isSaving || isUploading}
+            className={`flex-1 py-2 rounded-lg transition-colors ${
+              isSaving || isUploading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600 text-white"
+            }`}
           >
-            {editingProduct ? "به‌روزرسانی" : "ایجاد"}
+            {isSaving
+              ? "در حال ذخیره..."
+              : isUploading
+              ? "در حال آپلود..."
+              : editingProduct
+              ? "ویرایش"
+              : "افزودن"}
           </button>
+
           <button
             type="button"
             onClick={onClose}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg"
+            disabled={isSaving || isUploading}
+            className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             انصراف
           </button>

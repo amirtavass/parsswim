@@ -10,7 +10,7 @@ import { AuthProvider } from "./contexts/authContext";
 import { CartProvider } from "./contexts/CartContext";
 import { AdminProvider } from "./contexts/AdminContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
-import ApiDebugger from "./lib/apiDebug";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const vazirmatn = Vazirmatn({
   subsets: ["arabic"],
@@ -20,26 +20,29 @@ const vazirmatn = Vazirmatn({
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fa" dir="rtl" className={`${vazirmatn.variable} `}>
+    <html lang="en" dir="ltr" className={`${vazirmatn.variable} `}>
       <head>
         <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className={vazirmatn.className}>
-        <QueryClientProvider client={queryClient}>
-          <LanguageProvider>
-            <AuthProvider>
-              <AdminProvider>
-                <CartProvider>
-                  <ThemeProvider>
-                    <NavBar />
-                    {children}
-                    <Footer />
-                  </ThemeProvider>
-                </CartProvider>
-              </AdminProvider>
-            </AuthProvider>
-          </LanguageProvider>
-        </QueryClientProvider>
+        <ErrorBoundary>
+          <QueryClientProvider client={queryClient}>
+            <LanguageProvider>
+              <AuthProvider>
+                <AdminProvider>
+                  <CartProvider>
+                    <ThemeProvider>
+                      <NavBar />
+                      <main>{children}</main>
+                      <Footer />
+                    </ThemeProvider>
+                  </CartProvider>
+                </AdminProvider>
+              </AuthProvider>
+            </LanguageProvider>
+          </QueryClientProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

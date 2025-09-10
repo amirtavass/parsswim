@@ -78,6 +78,7 @@ const translations = {
     cart: "سبد خرید",
     cartEmpty: "سبد خرید شما خالی است",
     back: "بازگشت",
+    backToShop: "بازگشت به فروشگاه",
     total: "مجموع",
     clearCart: "پاک کردن سبد",
     payment: "پرداخت",
@@ -85,7 +86,7 @@ const translations = {
     paymentMethod: "روش پرداخت",
     onlinePayment: "پرداخت آنلاین (زرین‌پال)",
     accountBalance: "پرداخت از موجودی حساب",
-    paymentRequirement: "برای پرداخت نیاز به ورود به حساب کاربری دارید",
+    authRequired: "برای پرداخت نیاز به ورود به حساب کاربری دارید",
 
     // Dashboard
     welcome: "سلام",
@@ -106,27 +107,10 @@ const translations = {
     adminPassword: "رمز عبور مدیر",
     adminPanel: "پنل مدیریت",
     adminLogout: "خروج مدیر",
-    manageClasses: "مدیریت کلاس‌ها",
-    manageProducts: "مدیریت محصولات",
-    createNew: "ایجاد جدید",
-    edit: "ویرایش",
-    delete: "حذف",
-    title: "عنوان",
-    classType: "نوع کلاس",
-    date: "تاریخ",
-    time: "زمان",
-    operations: "عملیات",
-    category: "دسته‌بندی",
-    status: "وضعیت",
-    description: "توضیحات",
-    maxStudents: "حداکثر دانشجو",
-    instructor: "مربی",
-    uploadImage: "آپلود تصویر",
-    update: "به‌روزرسانی",
-    create: "ایجاد",
 
     // Footer
     swimCoach: "دو مربی حرفه ای شنا",
+    allRightsReserved: "تمام حقوق محفوظ است",
 
     // Articles Page (Main)
     articlesTitle: "مقالات آموزشی شنا",
@@ -150,7 +134,6 @@ const translations = {
     error: "خطا",
     tryAgain: "تلاش مجدد",
     noDataFound: "اطلاعاتی یافت نشد",
-    authRequired: "نیاز به احراز هویت",
     accessDenied: "دسترسی ممنوع",
   },
 
@@ -187,8 +170,9 @@ const translations = {
     toman: "Toman",
     allProducts: "All Products In One Place",
     noProductFound: "No Product Was Found",
-    noAvailibleProduct: "There Is No Availible Product At The Moment",
+    noAvailibleProduct: "There Is No Available Product At The Moment",
     callSupport: "Please Try Again Later Or Call Support",
+    backToShop: "Back to Shop",
 
     // Classes
     classRegistration: "Swimming Class Registration",
@@ -237,6 +221,8 @@ const translations = {
     onlinePayment: "Online Payment (ZarinPal)",
     accountBalance: "Pay from Account Balance",
     Total: "total",
+    authRequired: "Authentication required for payment",
+
     // Dashboard
     welcome: "Hello",
     welcomeToDashboard: "Welcome to your personal dashboard",
@@ -249,7 +235,6 @@ const translations = {
     pay: "Pay",
     cancel: "Cancel",
     logoutAccount: "Logout",
-    paymentRequirement: "For Payment You Need To Create New User",
 
     // Admin
     adminLogin: "Admin Login",
@@ -257,27 +242,10 @@ const translations = {
     adminPassword: "Admin Password",
     adminPanel: "Admin Panel",
     adminLogout: "Admin Logout",
-    manageClasses: "Manage Classes",
-    manageProducts: "Manage Products",
-    createNew: "Create New",
-    edit: "Edit",
-    delete: "Delete",
-    title: "Title",
-    classType: "Class Type",
-    date: "Date",
-    time: "Time",
-    operations: "Operations",
-    category: "Category",
-    status: "Status",
-    description: "Description",
-    maxStudents: "Max Students",
-    instructor: "Instructor",
-    uploadImage: "Upload Image",
-    update: "Update",
-    create: "Create",
 
     // Footer
     swimCoach: "2 Professional Swimming Coaches",
+    allRightsReserved: "All rights reserved",
 
     // Articles Page (Main)
     articlesTitle: "Swimming Training Articles",
@@ -302,7 +270,6 @@ const translations = {
     error: "Error",
     tryAgain: "Try Again",
     noDataFound: "No data found",
-    authRequired: "Authentication Required",
     accessDenied: "Access Denied",
   },
 };
@@ -310,29 +277,70 @@ const translations = {
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState("fa");
+  const [language, setLanguage] = useState("en"); // Changed from "fa" to "en"
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Load saved language on mount
   useEffect(() => {
-    const savedLang = localStorage.getItem("language") || "fa";
-    setLanguage(savedLang);
-    document.documentElement.dir = savedLang === "fa" ? "rtl" : "ltr";
-    document.documentElement.lang = savedLang;
+    try {
+      const savedLang = localStorage.getItem("language") || "en"; // Changed from "fa" to "en"
+      setLanguage(savedLang);
+      document.documentElement.dir = savedLang === "fa" ? "rtl" : "ltr";
+      document.documentElement.lang = savedLang;
+    } catch (error) {
+      console.error("Error loading language from localStorage:", error);
+      // Fallback to default
+      setLanguage("en"); // Changed from "fa" to "en"
+      document.documentElement.dir = "ltr"; // Changed from "rtl" to "ltr"
+      document.documentElement.lang = "en"; // Changed from "fa" to "en"
+    } finally {
+      setIsLoaded(true);
+    }
   }, []);
 
   // Toggle language
   const toggleLanguage = () => {
     const newLang = language === "fa" ? "en" : "fa";
     setLanguage(newLang);
-    localStorage.setItem("language", newLang);
+    try {
+      localStorage.setItem("language", newLang);
+    } catch (error) {
+      console.error("Error saving language to localStorage:", error);
+    }
     document.documentElement.dir = newLang === "fa" ? "rtl" : "ltr";
     document.documentElement.lang = newLang;
   };
 
-  // Get translation
+  // Get translation with fallback
   const t = (key) => {
-    return translations[language][key] || key;
+    if (!key) return "";
+
+    try {
+      const translation = translations[language]?.[key];
+      if (translation !== undefined) {
+        return translation;
+      }
+
+      // Fallback to English if Persian translation not found (or vice versa)
+      const fallbackLang = language === "en" ? "fa" : "en";
+      const fallback = translations[fallbackLang]?.[key];
+      if (fallback !== undefined) {
+        return fallback;
+      }
+
+      // Return the key itself as last resort
+      console.warn(`Translation missing for key: ${key}`);
+      return key;
+    } catch (error) {
+      console.error(`Translation error for key: ${key}`, error);
+      return key;
+    }
   };
+
+  // Don't render children until language is loaded
+  if (!isLoaded) {
+    return null;
+  }
 
   return (
     <LanguageContext.Provider value={{ language, toggleLanguage, t }}>

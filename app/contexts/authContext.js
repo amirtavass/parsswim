@@ -16,10 +16,14 @@ export function AuthProvider({ children }) {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await api.get("/auth/me"); // We'll need to create this endpoint
+      const response = await api.get("/auth/me");
       setUser(response.data.user);
       setIsAuthenticated(true);
     } catch (error) {
+      // FIXED: Don't log expected 401 errors
+      if (error.response?.status !== 401) {
+        console.error("Unexpected auth check error:", error);
+      }
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -35,10 +39,12 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await api.post("/auth/logout");
-      setUser(null);
-      setIsAuthenticated(false);
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
+      // Always clear local state regardless of API call result
+      setUser(null);
+      setIsAuthenticated(false);
     }
   };
 

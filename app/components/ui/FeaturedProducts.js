@@ -5,6 +5,7 @@ import Link from "next/link";
 import ProductCard from "./ProductCard";
 import { useProductsByCategory } from "@/app/hooks/useProducts";
 import { useLanguage } from "@/app/contexts/LanguageContext";
+
 // Simple loading skeleton
 function ProductsGridSkeleton() {
   return (
@@ -26,9 +27,10 @@ function ProductsGridSkeleton() {
   );
 }
 
-// Simple products grid that fetches data
+// ✅ FIXED: Simple products grid that fetches data - with proper t access
 function ProductsGrid({ category }) {
   const { data: products, isLoading } = useProductsByCategory(category);
+  const { t } = useLanguage(); // ✅ FIXED: Added useLanguage hook here
 
   if (isLoading) {
     return <ProductsGridSkeleton />;

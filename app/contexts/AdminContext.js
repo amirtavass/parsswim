@@ -20,6 +20,10 @@ export function AdminProvider({ children }) {
       setAdmin(response.data.admin);
       setIsAuthenticated(true);
     } catch (error) {
+      // FIXED: Don't log expected 401 errors
+      if (error.response?.status !== 401) {
+        console.error("Unexpected admin check error:", error);
+      }
       setAdmin(null);
       setIsAuthenticated(false);
     } finally {
@@ -35,11 +39,10 @@ export function AdminProvider({ children }) {
   const logout = async () => {
     try {
       await api.post("/admin/logout");
-      setAdmin(null);
-      setIsAuthenticated(false);
     } catch (error) {
       console.error("Admin logout error:", error);
-      // Force logout even if API call fails
+    } finally {
+      // Always clear local state regardless of API call result
       setAdmin(null);
       setIsAuthenticated(false);
     }

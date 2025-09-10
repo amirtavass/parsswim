@@ -1,4 +1,3 @@
-// app/components/layout/NavBar/MobileMenu.js
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/app/contexts/authContext";
@@ -12,23 +11,45 @@ function MobileMenu({ pathname, onClose }) {
   const { language, toggleLanguage, t } = useLanguage();
 
   const handleUserLogout = async () => {
-    await userLogout();
-    onClose();
-    window.location.href = "/";
+    try {
+      await userLogout();
+      onClose();
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      onClose();
+      window.location.href = "/";
+    }
   };
 
   const handleAdminLogout = async () => {
-    await adminLogout();
-    onClose();
-    window.location.href = "/";
+    try {
+      await adminLogout();
+      onClose();
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Admin logout error:", error);
+      onClose();
+      window.location.href = "/";
+    }
   };
 
   const handleLanguageToggle = () => {
-    toggleLanguage();
-    onClose();
+    try {
+      toggleLanguage();
+      onClose();
+    } catch (error) {
+      console.error("Language toggle error:", error);
+    }
   };
 
-  const isActiveRoute = (route) => pathname.startsWith(route);
+  const isActiveRoute = (route) => {
+    try {
+      return pathname.startsWith(route);
+    } catch (error) {
+      return false;
+    }
+  };
 
   return (
     <div className="md:hidden bg-white border-t border-gray-200">

@@ -43,9 +43,15 @@ const nextConfig = {
     }
     return config;
   },
-  // Trailing slash for better static hosting compatibility
-  trailingSlash: process.env.NODE_ENV === "production",
+
+  // FIXED: Better static export configuration
+  trailingSlash: false,
   output: "export",
+  distDir: "out",
+  // IMPORTANT: Disable server-side features for static export
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
 };
 
 export default nextConfig;

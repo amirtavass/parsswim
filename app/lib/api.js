@@ -1,35 +1,39 @@
+// lib/api.js
 import axios from "axios";
 
-// FIXED: Proper API URL detection for static export
+// Dynamic API URL detection
 const getApiBaseUrl = () => {
-  // For static export, we need to determine the API URL dynamically
   if (typeof window !== "undefined") {
-    // Client-side: determine based on current environment
     const hostname = window.location.hostname;
 
     if (hostname === "localhost" || hostname === "127.0.0.1") {
       return "http://localhost:4000";
     } else {
-      // Production: Use your actual Railway backend URL
       return "https://parsswim-backend-production.up.railway.app";
     }
   } else {
-    // Server-side: fallback for static generation
-    return process.env.NODE_ENV === "production"
-      ? "https://parsswim-backend-production.up.railway.app"
-      : "http://localhost:4000";
+    // Server-side fallback
+    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
   }
 };
 
+// Create axios instance with proper configuration
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
-  withCredentials: true,
-  timeout: 15000, // 15 seconds timeout for production
+  withCredentials: true, // CRITICAL: Always send cookies
+  timeout: 15000,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// Simple request interceptor
+// Request interceptor for debugging
 api.interceptors.request.use(
   (config) => {
+    // Log requests in development
+    if (process.env.NODE_ENV === "development") {
+      console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    }
     return config;
   },
   (error) => {
@@ -37,26 +41,25 @@ api.interceptors.request.use(
   }
 );
 
-// Simple response interceptor - only log actual errors
+// Response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // Only log errors that are NOT 401 (unauthorized) for /admin/me and /auth/me
-    const isAuthCheck =
-      error.config?.url === "/admin/me" || error.config?.url === "/auth/me";
-    const is401 = error.response?.status === 401;
+    // Don't log expected authentication errors
+    const silentEndpoints = ["/admin/me", "/auth/me"];
+    const isAuthCheck = silentEndpoints.some((endpoint) =>
+      error.config?.url?.includes(endpoint)
+    );
 
-    // Don't log expected 401 errors for auth checks
-    if (!(isAuthCheck && is401)) {
-      if (process.env.NODE_ENV === "development") {
-        console.error(
-          `API Error: ${error.config?.method?.toUpperCase()} ${
-            error.config?.url
-          } - Status: ${error.response?.status || "No Response"}`
-        );
-      }
+    if (!isAuthCheck || error.response?.status !== 401) {
+      console.error(
+        `API Error: ${error.config?.method?.toUpperCase()} ${
+          error.config?.url
+        }`,
+        error.response?.data || error.message
+      );
     }
 
     return Promise.reject(error);
