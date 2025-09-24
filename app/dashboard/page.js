@@ -97,8 +97,7 @@ function DashboardPage() {
 
   const handleChargeBalance = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const amount = formData.get("amount");
+    const amount = e.target.amount.value;
 
     if (!amount || amount < 1000) {
       const minAmountMessage =
@@ -109,32 +108,25 @@ function DashboardPage() {
       return;
     }
 
-    try {
-      // Create payment request to backend
-      const response = await fetch("/dashboard/pay", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
+    // Get the correct API URL
+    const apiUrl =
+      window.location.hostname === "localhost"
+        ? "http://localhost:4000"
+        : "https://parsswim-backend-production.up.railway.app";
 
-      if (response.redirected) {
-        // Redirect to payment gateway
-        window.location.href = response.url;
-      } else {
-        const errorMessage =
-          language === "fa"
-            ? "خطا در ایجاد درخواست پرداخت"
-            : "Error creating payment request";
-        alert(errorMessage);
-      }
-    } catch (error) {
-      console.error("Payment error:", error);
-      const errorMessage =
-        language === "fa"
-          ? "خطا در اتصال به درگاه پرداخت"
-          : "Error connecting to payment gateway";
-      alert(errorMessage);
-    }
+    // Create a form and submit it (instead of fetch)
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = `${apiUrl}/dashboard/pay`;
+
+    const amountInput = document.createElement("input");
+    amountInput.type = "hidden";
+    amountInput.name = "amount";
+    amountInput.value = amount;
+
+    form.appendChild(amountInput);
+    document.body.appendChild(form);
+    form.submit();
   };
 
   const handlePaidClassPayment = () => {
