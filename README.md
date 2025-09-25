@@ -1,6 +1,6 @@
 # 🏊‍♂️ Pars Swim - Professional Swimming Instructor Platform
 
-A comprehensive full-stack web application for swimming instructors built with **Next.js 15** and **Node.js/Express**, featuring multi-language support, real-time booking system, and e-commerce functionality.
+A comprehensive full-stack web application for swimming instructors built with **Next.js 15** and **Node.js/Express**, featuring class management, multi-language support, e-commerce and integrated payment processing.
 
 ## 🌐 Live Demo
 

@@ -27,10 +27,9 @@ function ProductsGridSkeleton() {
   );
 }
 
-// ✅ FIXED: Simple products grid that fetches data - with proper t access
 function ProductsGrid({ category }) {
   const { data: products, isLoading } = useProductsByCategory(category);
-  const { t } = useLanguage(); // ✅ FIXED: Added useLanguage hook here
+  const { t } = useLanguage();
 
   if (isLoading) {
     return <ProductsGridSkeleton />;
