@@ -1,9 +1,8 @@
 export const metadata = {
-  title: "ثبت‌نام در کلاس شنا - parsswim",
+  title: "Swimming Class Registration - ParsSwim",
   description:
-    "ثبت‌نام در کلاس‌های آموزش شنا. فرم ساده برای شروع آموزش شنا حرفه‌ای.",
+    "Register for swimming lessons. Simple form to start your professional swimming training journey.",
 };
-
 export default function RegisterLayout({ children }) {
   return <>{children}</>;
 }

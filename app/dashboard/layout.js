@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "داشبورد کاربر - parsswim",
+  title: "Student Dashboard - ParsSwim",
   description:
-    "داشبورد شخصی هنرجو برای رزرو کلاس، پرداخت آنلاین و مشاهده تاریخ‌های آزاد.",
+    "Personal student dashboard for class booking, online payments, and viewing available schedules.",
 };
 
 export default function DashboardLayout({ children }) {

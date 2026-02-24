@@ -1,9 +1,8 @@
 export const metadata = {
-  title: "فروشگاه تجهیزات شنا - parsswim",
+  title: "Swimming Equipment Store - ParsSwim",
   description:
-    "خرید تجهیزات شنا با بهترین کیفیت: مایو، عینک، فین و کلیه لوازم شنا. تحویل سریع و قیمت مناسب.",
+    "Buy high-quality swimming gear: swimwear, goggles, fins and all swimming accessories. Fast delivery and competitive prices.",
 };
-
 export default function ProductsLayout({ children }) {
   return <>{children}</>;
 }

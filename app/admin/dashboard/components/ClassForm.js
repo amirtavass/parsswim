@@ -18,11 +18,56 @@ function ClassForm({ editingClass, onClose }) {
     location: editingClass?.location || "استخر اصلی",
   });
 
+  const [errors, setErrors] = useState({});
+
   const createClass = useCreateClass();
   const updateClass = useUpdateClass();
 
+  // Helper function to safely handle number inputs
+  const handleNumberChange = (field, value) => {
+    const numValue = value === "" ? "" : parseInt(value);
+
+    // Clear any existing error for this field
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+
+    // Validate the input
+    if (value !== "" && (isNaN(numValue) || numValue < 0)) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]:
+          field === "price"
+            ? "قیمت باید عدد مثبت باشد"
+            : "مقدار باید عدد مثبت باشد",
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, [field]: numValue }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate required number fields
+    const newErrors = {};
+    if (formData.price === "" || formData.price < 0) {
+      newErrors.price = "قیمت الزامی است و باید عدد مثبت باشد";
+    }
+    if (formData.duration === "" || formData.duration <= 0) {
+      newErrors.duration = "مدت زمان الزامی است و باید بیشتر از صفر باشد";
+    }
+    if (formData.maxStudents === "" || formData.maxStudents <= 0) {
+      newErrors.maxStudents =
+        "حداکثر دانشجو الزامی است و باید بیشتر از صفر باشد";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     try {
       const classData = { ...formData, date: new Date(formData.date) };
 
@@ -68,16 +113,21 @@ function ClassForm({ editingClass, onClose }) {
           <option value="جلسه آزمایشی رایگان">جلسه آزمایشی رایگان</option>
         </select>
 
-        <input
-          type="number"
-          placeholder="مدت زمان (دقیقه)"
-          value={formData.duration}
-          onChange={(e) =>
-            setFormData({ ...formData, duration: parseInt(e.target.value) })
-          }
-          className="w-full px-3 py-2 border rounded-lg"
-          required
-        />
+        <div className="relative">
+          <input
+            type="number"
+            placeholder="مدت زمان (دقیقه)"
+            value={formData.duration}
+            onChange={(e) => handleNumberChange("duration", e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg ${
+              errors.duration ? "border-red-500 bg-red-50" : ""
+            }`}
+            required
+          />
+          {errors.duration && (
+            <p className="text-red-500 text-sm mt-1">{errors.duration}</p>
+          )}
+        </div>
 
         <input
           type="date"
@@ -95,27 +145,37 @@ function ClassForm({ editingClass, onClose }) {
           required
         />
 
-        <input
-          type="number"
-          placeholder="حداکثر دانشجو"
-          value={formData.maxStudents}
-          onChange={(e) =>
-            setFormData({ ...formData, maxStudents: parseInt(e.target.value) })
-          }
-          className="w-full px-3 py-2 border rounded-lg"
-          required
-        />
+        <div className="relative">
+          <input
+            type="number"
+            placeholder="حداکثر دانشجو"
+            value={formData.maxStudents}
+            onChange={(e) => handleNumberChange("maxStudents", e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg ${
+              errors.maxStudents ? "border-red-500 bg-red-50" : ""
+            }`}
+            required
+          />
+          {errors.maxStudents && (
+            <p className="text-red-500 text-sm mt-1">{errors.maxStudents}</p>
+          )}
+        </div>
 
-        <input
-          type="number"
-          placeholder="قیمت (تومان)"
-          value={formData.price}
-          onChange={(e) =>
-            setFormData({ ...formData, price: parseInt(e.target.value) })
-          }
-          className="w-full px-3 py-2 border rounded-lg"
-          required
-        />
+        <div className="relative">
+          <input
+            type="number"
+            placeholder="قیمت (تومان)"
+            value={formData.price}
+            onChange={(e) => handleNumberChange("price", e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg ${
+              errors.price ? "border-red-500 bg-red-50" : ""
+            }`}
+            required
+          />
+          {errors.price && (
+            <p className="text-red-500 text-sm mt-1">{errors.price}</p>
+          )}
+        </div>
 
         <select
           value={formData.instructor}

@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "سبد خرید - parsswim",
+  title: "Shopping Cart - ParsSwim",
   description:
-    "مشاهده و مدیریت سبد خرید شما. تکمیل خرید تجهیزات شنا با امکان پرداخت آنلاین.",
+    "View and manage your shopping cart. Complete your swimming equipment purchase with secure online payment.",
 };
 
 export default function CartLayout({ children }) {

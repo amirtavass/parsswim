@@ -1,9 +1,8 @@
 export const metadata = {
-  title: "ورود هنرجو - پارس شنا",
+  title: "Student Login - ParsSwim",
   description:
-    "ورود به حساب کاربری برای دسترسی به کلاس‌های شنا، داشبورد شخصی و امکانات آموزشی.",
+    "Login to your ParsSwim account to access classes, payments, and personal dashboard.",
 };
-
 export default function LoginLayout({ children }) {
   return <>{children}</>;
 }

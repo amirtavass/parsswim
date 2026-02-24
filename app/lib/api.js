@@ -8,8 +8,11 @@ const getApiBaseUrl = () => {
 
     if (hostname === "localhost" || hostname === "127.0.0.1") {
       return "http://localhost:4000";
+    } else if (hostname === "parsswim.ir" || hostname === "www.parsswim.ir") {
+      return "https://parsswim.ir/api";
     } else {
-      return "https://parsswim-backend-production.up.railway.app";
+      // For other deployments
+      return process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
     }
   } else {
     // Server-side fallback
@@ -38,7 +41,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor for error handling
@@ -50,7 +53,7 @@ api.interceptors.response.use(
     // Don't log expected authentication errors
     const silentEndpoints = ["/admin/me", "/auth/me"];
     const isAuthCheck = silentEndpoints.some((endpoint) =>
-      error.config?.url?.includes(endpoint)
+      error.config?.url?.includes(endpoint),
     );
 
     if (!isAuthCheck || error.response?.status !== 401) {
@@ -58,12 +61,12 @@ api.interceptors.response.use(
         `API Error: ${error.config?.method?.toUpperCase()} ${
           error.config?.url
         }`,
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

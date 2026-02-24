@@ -48,10 +48,6 @@ const nextConfig = {
   trailingSlash: false,
   output: "export",
   distDir: "out",
-  // IMPORTANT: Disable server-side features for static export
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
 };
 
 export default nextConfig;

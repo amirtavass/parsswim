@@ -13,6 +13,9 @@ console.log("🚀 Starting ParsSwim API Server...");
 const app = express();
 const port = process.env.PORT || 4000;
 
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
 // // ✅ Multer Configuration for File Uploads
 // const storage = multer.diskStorage({
 //   destination: function (req, file, cb) {
@@ -43,14 +46,14 @@ const port = process.env.PORT || 4000;
 //   },
 // });
 
-// ✅ CORS Configuration - FIXED
+// ✅ CORS Configuration - FIXED FOR PRODUCTION
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
       "https://parsswim.ir",
+      "https://www.parsswim.ir",
       "http://localhost:3000",
       "http://127.0.0.1:3000",
-      "https://www.parsswim.ir",
     ];
 
     // Allow requests with no origin (like mobile apps or Postman)
@@ -59,7 +62,8 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(null, true); // Allow all origins in production for now
+      console.log("CORS blocked origin:", origin);
+      callback(new Error("Not allowed by CORS"), false);
     }
   },
   credentials: true,
@@ -82,6 +86,8 @@ app.use(express.static("public"));
 // ✅ Session Configuration - FIXED
 app.set("trust proxy", 1); // Trust first proxy for Railway
 
+const isProduction = process.env.NODE_ENV === "production";
+
 app.use(
   session({
     secret:
@@ -95,11 +101,11 @@ app.use(
         })
       : undefined,
     cookie: {
-      secure: true,
+      secure: isProduction,
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: "none",
-      domain: undefined,
+      sameSite: isProduction ? "none" : "lax",
+      // domain removed so cookie is scoped to the backend host (Railway domain) and not rejected by browser
     },
     name: "parsswim.sid", // Custom session name
   })
@@ -226,7 +232,9 @@ app.post("/dashboard/pay", async (req, res) => {
     const params = {
       merchant_id: "12345678-1234-1234-1234-123456789012",
       amount: amount,
-      callback_url: "http://localhost:4000/dashboard/paycallback",
+      callback_url: isProduction
+        ? "https://parsswim-backend-production.up.railway.app/dashboard/paycallback"
+        : "http://localhost:4000/dashboard/paycallback",
       description: "Charge account balance - sandbox test",
     };
 
@@ -270,7 +278,10 @@ app.get("/dashboard/paycallback", async (req, res) => {
     const User = require("./models/user");
 
     if (req.query.Status && req.query.Status !== "OK") {
-      return res.redirect("http://localhost:3000/dashboard?payment=cancelled");
+      const frontendUrl = isProduction
+        ? "https://parsswim.ir"
+        : "http://localhost:3000";
+      return res.redirect(`${frontendUrl}/dashboard?payment=cancelled`);
     }
 
     let paymentRecord = await Payment.findOne({
@@ -278,7 +289,10 @@ app.get("/dashboard/paycallback", async (req, res) => {
     });
 
     if (!paymentRecord) {
-      return res.redirect("http://localhost:3000/dashboard?payment=notfound");
+      const frontendUrl = isProduction
+        ? "https://parsswim.ir"
+        : "http://localhost:3000";
+      return res.redirect(`${frontendUrl}/dashboard?payment=notfound`);
     }
 
     let params = {
@@ -304,13 +318,22 @@ app.get("/dashboard/paycallback", async (req, res) => {
         $inc: { balance: paymentRecord.amount },
       });
 
-      return res.redirect("http://localhost:3000/dashboard?payment=success");
+      const frontendUrl = isProduction
+        ? "https://parsswim.ir"
+        : "http://localhost:3000";
+      return res.redirect(`${frontendUrl}/dashboard?payment=success`);
     } else {
-      return res.redirect("http://localhost:3000/dashboard?payment=failed");
+      const frontendUrl = isProduction
+        ? "https://parsswim.ir"
+        : "http://localhost:3000";
+      return res.redirect(`${frontendUrl}/dashboard?payment=failed`);
     }
   } catch (err) {
     console.error("Dashboard payment callback error:", err);
-    res.redirect("http://localhost:3000/dashboard?payment=error");
+    const frontendUrl = isProduction
+      ? "https://parsswim.ir"
+      : "http://localhost:3000";
+    res.redirect(`${frontendUrl}/dashboard?payment=error`);
   }
 });
 // ✅ Payment Callback Route (for cart payments)
@@ -321,7 +344,10 @@ app.get("/paycallback", async (req, res) => {
 
     // If payment was cancelled
     if (req.query.Status && req.query.Status !== "OK") {
-      return res.redirect("http://localhost:3000/cart?payment=cancelled");
+      const frontendUrl = isProduction
+        ? "https://parsswim.ir"
+        : "http://localhost:3000";
+      return res.redirect(`${frontendUrl}/cart?payment=cancelled`);
     }
 
     let paymentRecord = await Payment.findOne({
@@ -329,7 +355,10 @@ app.get("/paycallback", async (req, res) => {
     });
 
     if (!paymentRecord) {
-      return res.redirect("http://localhost:3000/cart?payment=notfound");
+      const frontendUrl = isProduction
+        ? "https://parsswim.ir"
+        : "http://localhost:3000";
+      return res.redirect(`${frontendUrl}/cart?payment=notfound`);
     }
 
     let params = {
@@ -350,13 +379,22 @@ app.get("/paycallback", async (req, res) => {
       paymentRecord.payment = true;
       await paymentRecord.save();
 
-      return res.redirect("http://localhost:3000/cart?payment=success");
+      const frontendUrl = isProduction
+        ? "https://parsswim.ir"
+        : "http://localhost:3000";
+      return res.redirect(`${frontendUrl}/cart?payment=success`);
     } else {
-      return res.redirect("http://localhost:3000/cart?payment=failed");
+      const frontendUrl = isProduction
+        ? "https://parsswim.ir"
+        : "http://localhost:3000";
+      return res.redirect(`${frontendUrl}/cart?payment=failed`);
     }
   } catch (err) {
     console.error("Payment callback error:", err);
-    res.redirect("http://localhost:3000/cart?payment=error");
+    const frontendUrl = isProduction
+      ? "https://parsswim.ir"
+      : "http://localhost:3000";
+    res.redirect(`${frontendUrl}/cart?payment=error`);
   }
 });
 
@@ -371,7 +409,6 @@ async function connectDatabase() {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-
     console.log("✅ MongoDB connected successfully");
 
     console.log("✅ Models initialized");

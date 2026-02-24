@@ -10,7 +10,12 @@ import { useLanguage } from "@/app/contexts/LanguageContext";
 
 function SlidingHero() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
   const { t } = useLanguage();
+
+  // Minimum swipe distance (in px) to trigger slide change
+  const minSwipeDistance = 50;
 
   const slides = [
     {
@@ -59,9 +64,40 @@ function SlidingHero() {
     return () => clearInterval(timer);
   }, []);
 
+  const onTouchStart = (e) => {
+    setTouchEnd(null); // Reset touchEnd
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      // Swipe left - go to next slide
+      setCurrentSlide((prev) => (prev + 1) % 3);
+    }
+    if (isRightSwipe) {
+      // Swipe right - go to previous slide
+      setCurrentSlide((prev) => (prev - 1 + 3) % 3);
+    }
+  };
+
   return (
     <main>
-      <div className="relative w-full h-[70vh] overflow-hidden">
+      <div
+        className="relative w-full h-[70vh] overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         {slides.map((slide, index) => (
           <section
             key={slide.id}

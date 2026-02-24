@@ -51,7 +51,7 @@ function CoachResume() {
   const data = resumeData[language];
 
   return (
-    <section className="py-13 bg-gray-50">
+    <section className="py-16 bg-gray-50">
       <div className="mx-auto max-w-6xl px-4">
         <div className="text-center mb-12">
           <h2 className="text-gray-800 font-bold text-3xl mb-4">
@@ -95,7 +95,7 @@ function CoachResume() {
             <h3 className="text-2xl font-bold text-gray-800 mb-4">
               {t("achievements")}
             </h3>
-            <ul className="text-gray-600 space-y-2">
+            <ul className="text-gray-600 space-y-3">
               {data.achievements.map((item, index) => (
                 <li key={index}>{item}</li>
               ))}

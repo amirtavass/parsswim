@@ -6,9 +6,9 @@ import FeaturedProducts from "./components/ui/FeaturedProducts";
 import ClassRegister from "./components/ui/ClassRegister";
 
 export const metadata = {
-  title: "parsswim - آموزش شنا حرفه‌ای",
+  title: "ParsSwim - Professional Swimming Lessons",
   description:
-    "آموزش شنا حرفه‌ای برای تمام سنین با ۱۵ سال تجربه. مربی مجرب با مدارک بین‌المللی.",
+    "Professional swimming instruction for all ages with 15 years of experience. Expert coach with international certifications and proven track record.",
 };
 export default function page() {
   return (

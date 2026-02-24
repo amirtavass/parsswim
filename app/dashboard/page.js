@@ -135,8 +135,6 @@ function DashboardPage() {
         ? "انتقال به صفحه پرداخت..."
         : "Redirecting to payment page...";
     alert(paymentMessage);
-    // Here you would integrate with your payment system
-    // For now, we'll just show the alert
   };
 
   return (

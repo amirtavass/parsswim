@@ -71,3 +71,97 @@ Thumbs.db
 # Uploads (for local development)
 public/uploads/*
 !public/uploads/.gitkeep
+
+# ====================================
+# 🔒 SECURITY SENSITIVE FILES
+# ====================================
+
+# Environment & Configuration Files
+.env*
+.environment
+.config
+config.local.*
+settings.local.*
+secrets.*
+*.secret
+*.secrets
+
+# SSH Keys & Certificates
+*.pem
+*.key
+*.priv
+*.private
+*.crt
+*.cer
+*.p12
+*.pfx
+id_rsa*
+id_dsa*
+id_ed25519*
+authorized_keys
+known_hosts
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+dump.sql
+*.sql.gz
+database.json
+db_backup*
+
+# API Keys & Tokens
+.api-keys
+api-keys.*
+tokens.*
+jwt-secret*
+stripe-keys*
+zarinpal-config*
+
+# Backup Files
+*.bak
+*.backup
+*.old
+*.orig
+*~
+.#*
+
+# Log Files (Enhanced)
+logs/
+*.log
+*.log.*
+*.out
+access.log*
+error.log*
+combined.log*
+app.log*
+
+# Temporary & Cache Files
+.tmp/
+tmp/
+temp/
+.cache/
+.temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Cloud & Container Configs
+.docker/
+docker-compose.override.yml
+.dockerignore.local
+.aws/
+.gcp/
+.azure/
+
+# Password Files
+passwords.*
+user-credentials*
+auth-config*
+
+# LocalStorage/Session Data
+localStorage.*
+sessionStorage.*
+cookies.txt

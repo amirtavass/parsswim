@@ -1,18 +1,20 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useLanguage } from "@/app/contexts/LanguageContext";
 
 function ArticleReader({ article, swimmingType, onBack }) {
+  const { language, t } = useLanguage();
   // Error handling - if no article is passed
   if (!article) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="mx-auto max-w-4xl px-4 text-center">
           <h1 className="text-3xl font-bold text-gray-800 mb-4">
-            مقاله یافت نشد
+            {language === "fa" ? "مقاله یافت نشد" : "Article Not Found"}
           </h1>
           <Link href="/articles" className="text-primary hover:underline">
-            بازگشت به مقالات
+            {language === "fa" ? "بازگشت به مقالات" : "Back to Articles"}
           </Link>
         </div>
       </div>
@@ -25,7 +27,7 @@ function ArticleReader({ article, swimmingType, onBack }) {
         {/* BREADCRUMB NAVIGATION */}
         <div className="flex items-center mb-8 text-sm">
           <Link href="/articles" className="text-gray-500 hover:text-primary">
-            مقالات
+            {t("articles")}
           </Link>
           {swimmingType && (
             <>
@@ -80,10 +82,17 @@ function ArticleReader({ article, swimmingType, onBack }) {
             {/* AUTHOR AND META INFO */}
             <div className="border-b border-gray-200 pb-6 mb-8">
               <div className="flex items-center justify-between text-sm text-gray-600">
-                <span>نویسنده: {article.author}</span>
+                <span>
+                  {language === "fa" ? "نویسنده:" : "Author:"} {article.author}
+                </span>
                 <div className="flex items-center gap-4">
-                  <span>زمان مطالعه: {article.readTime}</span>
-                  <span>سطح: {article.difficulty}</span>
+                  <span>
+                    {language === "fa" ? "زمان مطالعه:" : "Read Time:"}{" "}
+                    {article.readTime}
+                  </span>
+                  <span>
+                    {language === "fa" ? "سطح:" : "Level:"} {article.difficulty}
+                  </span>
                 </div>
               </div>
 
@@ -117,7 +126,9 @@ function ArticleReader({ article, swimmingType, onBack }) {
                 onClick={onBack}
                 className="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-lg transition-colors"
               >
-                بازگشت به فهرست مقالات
+                {language === "fa"
+                  ? "بازگشت به فهرست مقالات"
+                  : "Back to Articles"}
               </button>
             </div>
           </div>
