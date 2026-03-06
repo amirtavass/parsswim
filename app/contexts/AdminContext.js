@@ -15,11 +15,18 @@ export function AdminProvider({ children }) {
   }, []);
 
   const checkAdminStatus = async () => {
+    console.log("🔍 Checking admin status...");
+    setIsLoading(true);
     try {
       const response = await api.get("/admin/me");
+      console.log("✅ Admin status check successful:", response.data);
       setAdmin(response.data.admin);
       setIsAuthenticated(true);
     } catch (error) {
+      console.log(
+        "❌ Admin status check failed:",
+        error.response?.status || error.message,
+      );
       // FIXED: Don't log expected 401 errors
       if (error.response?.status !== 401) {
         console.error("Unexpected admin check error:", error);
@@ -27,6 +34,7 @@ export function AdminProvider({ children }) {
       setAdmin(null);
       setIsAuthenticated(false);
     } finally {
+      console.log("🏁 Admin check complete, stopping loading");
       setIsLoading(false);
     }
   };

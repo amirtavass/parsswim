@@ -10,7 +10,7 @@ export function UserInfoCard({ user, onLogout }) {
   const handleChargeBalance = async (e) => {
     e.preventDefault();
     if (!chargeAmount || chargeAmount < 1000) {
-      alert("حداقل مبلغ شارژ 1000 تومان است");
+      alert("حداقل مبلغ شارژ £1 است");
       return;
     }
 

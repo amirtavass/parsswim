@@ -32,7 +32,7 @@ function ProductsTab() {
         console.error("Delete failed:", error);
         if (error.response?.status === 403) {
           alert(
-            "شما اجازه حذف محصول را ندارید. لطفاً از حساب مدیر استفاده کنید."
+            "شما اجازه حذف محصول را ندارید. لطفاً از حساب مدیر استفاده کنید.",
           );
         } else {
           alert("خطا در حذف محصول: " + (error.message || "خطای ناشناخته"));
@@ -106,7 +106,7 @@ function ProductsTab() {
                 <tr key={product._id} className="border-b">
                   <td className="px-4 py-2">{product.name}</td>
                   <td className="px-4 py-2">
-                    {product.price.toLocaleString()} تومان
+                    £{product.price.toLocaleString()}
                   </td>
                   <td className="px-4 py-2">{product.category}</td>
                   <td className="px-4 py-2">

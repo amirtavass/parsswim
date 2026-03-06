@@ -102,7 +102,7 @@ function DashboardPage() {
     if (!amount || amount < 1000) {
       const minAmountMessage =
         language === "fa"
-          ? "حداقل مبلغ شارژ 1000 تومان است"
+          ? "حداقل مبلغ شارژ £1 است"
           : "Minimum charge amount is 1000 Toman";
       alert(minAmountMessage);
       return;
@@ -210,7 +210,7 @@ function DashboardPage() {
                   <p className="text-gray-600">
                     {language === "fa" ? "تاریخ" : "Date"}:{" "}
                     {new Date(selectedClass.date).toLocaleDateString(
-                      language === "fa" ? "fa-IR" : "en-US"
+                      language === "fa" ? "fa-IR" : "en-US",
                     )}
                   </p>
                   <p className="text-gray-600">

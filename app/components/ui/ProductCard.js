@@ -84,11 +84,8 @@ function ProductCard({ product }) {
 
         <div className="text-center mb-4">
           <span className="text-xl sm:text-2xl font-bold text-primary">
-            {displayPrice}
+            £{displayPrice}
           </span>
-          {typeof product.price === "number" && (
-            <span className="text-gray-500 mx-2 text-sm">{t("toman")}</span>
-          )}
         </div>
 
         <button

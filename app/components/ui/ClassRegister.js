@@ -113,11 +113,12 @@ function ClassRegister() {
                 <div className="text-3xl font-bold">
                   {cls.price === 0
                     ? t("freeClass")
-                    : cls.price.toLocaleString()}
+                    : cls.price.toLocaleString("en-GB", {
+                        style: "currency",
+                        currency: "GBP",
+                      })}
                 </div>
-                {cls.price > 0 && (
-                  <div className="text-sm opacity-90">{t("toman")}</div>
-                )}
+                {cls.price > 0 && <div className="text-sm opacity-90">GBP</div>}
                 {cls.price === 0 && (
                   <div className="text-sm opacity-90">
                     {t("freeTrialSession")}
@@ -144,7 +145,7 @@ function ClassRegister() {
                     />
                     <span>
                       {new Date(cls.date).toLocaleDateString(
-                        language === "fa" ? "fa-IR" : "en-US"
+                        language === "fa" ? "fa-IR" : "en-US",
                       )}{" "}
                       - {cls.time}
                     </span>
@@ -182,8 +183,8 @@ function ClassRegister() {
                     cls.currentStudents >= cls.maxStudents
                       ? "bg-gray-400 text-gray-600 cursor-not-allowed"
                       : cls.price === 0
-                      ? "bg-green-600 hover:bg-green-700 text-white"
-                      : "bg-success hover:bg-green-700 text-white"
+                        ? "bg-green-600 hover:bg-green-700 text-white"
+                        : "bg-success hover:bg-green-700 text-white"
                   }`}
                 >
                   {getButtonText(cls)}

@@ -5,7 +5,7 @@ import { useCreateClass, useUpdateClass } from "@/app/hooks/useClasses";
 function ClassForm({ editingClass, onClose }) {
   const [formData, setFormData] = useState({
     title: editingClass?.title || "",
-    classType: editingClass?.classType || "کلاس خصوصی ۱۲ جلسه",
+    classType: editingClass?.classType || "Private 12-Session",
     description: editingClass?.description || "",
     duration: editingClass?.duration || 60,
     date: editingClass
@@ -14,8 +14,8 @@ function ClassForm({ editingClass, onClose }) {
     time: editingClass?.time || "",
     maxStudents: editingClass?.maxStudents || 10,
     price: editingClass?.price || 0,
-    instructor: editingClass?.instructor || "مربی اول",
-    location: editingClass?.location || "استخر اصلی",
+    instructor: editingClass?.instructor || "Primary Coach",
+    location: editingClass?.location || "Main Pool",
   });
 
   const [errors, setErrors] = useState({});
@@ -106,11 +106,13 @@ function ClassForm({ editingClass, onClose }) {
           }
           className="w-full px-3 py-2 border rounded-lg"
         >
-          <option value="کلاس خصوصی ۱۲ جلسه">کلاس خصوصی ۱۲ جلسه</option>
-          <option value="کلاس پدر و فرزند">کلاس پدر و فرزند</option>
-          <option value="کلاس آمادگی مسابقات">کلاس آمادگی مسابقات</option>
-          <option value="سانس آزاد استخر">سانس آزاد استخر</option>
-          <option value="جلسه آزمایشی رایگان">جلسه آزمایشی رایگان</option>
+          <option value="Private 12-Session">Private 12-Session</option>
+          <option value="Parent & Child">Parent & Child</option>
+          <option value="Competition Prep">Competition Prep</option>
+          <option value="Free Pool Session">Free Pool Session</option>
+          <option value="Free Trial Session">Free Trial Session</option>
+          <option value="Group Beginner">Group Beginner</option>
+          <option value="Advanced Training">Advanced Training</option>
         </select>
 
         <div className="relative">
@@ -184,9 +186,9 @@ function ClassForm({ editingClass, onClose }) {
           }
           className="w-full px-3 py-2 border rounded-lg"
         >
-          <option value="مربی اول">مربی اول</option>
-          <option value="مربی دوم">مربی دوم</option>
-          <option value="هر دو مربی">هر دو مربی</option>
+          <option value="Primary Coach">Primary Coach</option>
+          <option value="Secondary Coach">Secondary Coach</option>
+          <option value="Both Coaches">Both Coaches</option>
         </select>
 
         <textarea

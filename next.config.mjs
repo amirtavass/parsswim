@@ -15,15 +15,15 @@ const nextConfig = {
         port: "4000",
         pathname: "/images/**",
       },
-      // ADDED: Support for production Railway backend
+      // Support for DigitalOcean production backend
       {
         protocol: "https",
-        hostname: "parsswim-backend-production.up.railway.app",
+        hostname: "your-droplet-domain.com", // Update with your actual domain
         pathname: "/uploads/images/**",
       },
       {
         protocol: "https",
-        hostname: "parsswim-backend-production.up.railway.app",
+        hostname: "your-droplet-domain.com", // Update with your actual domain
         pathname: "/images/**",
       },
     ],
@@ -46,8 +46,6 @@ const nextConfig = {
 
   // FIXED: Better static export configuration
   trailingSlash: false,
-  output: "export",
-  distDir: "out",
 };
 
 export default nextConfig;

@@ -47,7 +47,7 @@ function ProductForm({ editingProduct, onClose, onSuccess }) {
 
       if (!response.ok) {
         throw new Error(
-          result.message || `Upload failed with status ${response.status}`
+          result.message || `Upload failed with status ${response.status}`,
         );
       }
 
@@ -56,7 +56,7 @@ function ProductForm({ editingProduct, onClose, onSuccess }) {
         return result.imagePath;
       } else {
         throw new Error(
-          result.message || "Upload failed - no image path returned"
+          result.message || "Upload failed - no image path returned",
         );
       }
     } catch (error) {
@@ -80,7 +80,7 @@ function ProductForm({ editingProduct, onClose, onSuccess }) {
       // Handle file upload if a file is selected
       if (fileInputRef.current?.files[0]) {
         const uploadedImagePath = await handleImageUpload(
-          fileInputRef.current.files[0]
+          fileInputRef.current.files[0],
         );
         if (uploadedImagePath) {
           finalProductData.image = uploadedImagePath;
@@ -111,7 +111,7 @@ function ProductForm({ editingProduct, onClose, onSuccess }) {
 
       if (!response.ok) {
         throw new Error(
-          result.message || `Operation failed with status ${response.status}`
+          result.message || `Operation failed with status ${response.status}`,
         );
       }
 
@@ -119,7 +119,7 @@ function ProductForm({ editingProduct, onClose, onSuccess }) {
         alert(
           editingProduct
             ? "محصول با موفقیت ویرایش شد"
-            : "محصول با موفقیت اضافه شد"
+            : "محصول با موفقیت اضافه شد",
         );
 
         // Clear form
@@ -182,7 +182,7 @@ function ProductForm({ editingProduct, onClose, onSuccess }) {
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              قیمت (تومان)
+              قیمت (پوند)
             </label>
             <input
               type="number"
@@ -280,10 +280,10 @@ function ProductForm({ editingProduct, onClose, onSuccess }) {
             {isSaving
               ? "در حال ذخیره..."
               : isUploading
-              ? "در حال آپلود..."
-              : editingProduct
-              ? "ویرایش"
-              : "افزودن"}
+                ? "در حال آپلود..."
+                : editingProduct
+                  ? "ویرایش"
+                  : "افزودن"}
           </button>
 
           <button
