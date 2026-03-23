@@ -8,6 +8,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
+        poppins: ["var(--font-poppins)", "sans-serif"],
         vazirmatn: ["var(--font-vazirmatn)", "sans-serif"],
       },
       colors: {

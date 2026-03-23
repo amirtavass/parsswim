@@ -18,7 +18,7 @@ function Footer() {
             </h3>
             <p className="text-gray-300">{t("swimCoach")}</p>
             <p className="text-gray-300">
-              {language === "fa" ? "تلفن" : "Phone"}: 09179488211
+              {language === "fa" ? "تلفن" : "Phone"}: 07783013744
             </p>
             <p className="text-gray-300">
               {language === "fa" ? "ایمیل" : "Email"}: amirtavass62@gmail.com

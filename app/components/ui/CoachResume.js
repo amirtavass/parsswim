@@ -1,9 +1,48 @@
 "use client";
-import { FaChalkboardTeacher, FaCertificate, FaTrophy } from "react-icons/fa";
+import {
+  FaChalkboardTeacher,
+  FaCertificate,
+  FaTrophy,
+  FaSwimmer,
+  FaUsers,
+  FaMedal,
+  FaAward,
+} from "react-icons/fa";
 import { useLanguage } from "@/app/contexts/LanguageContext";
+import { motion } from "framer-motion";
 
 function CoachResume() {
   const { t, language } = useLanguage();
+  const isRtl = language === "fa";
+
+  // Animation variants (consistent across server/client)
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+
+  const stats = {
+    fa: [
+      { value: "۱۵+", label: "سال تجربه", icon: FaSwimmer },
+      { value: "۵۰۰+", label: "دانش‌آموز", icon: FaUsers },
+      { value: "۴", label: "مدرک معتبر", icon: FaCertificate },
+      { value: "۶", label: "افتخار ورزشی", icon: FaMedal },
+    ],
+    en: [
+      { value: "15+", label: "Years Experience", icon: FaSwimmer },
+      { value: "500+", label: "Students Trained", icon: FaUsers },
+      { value: "4", label: "Certifications", icon: FaCertificate },
+      { value: "6", label: "Awards Won", icon: FaMedal },
+    ],
+  };
 
   const resumeData = {
     fa: {
@@ -34,7 +73,7 @@ function CoachResume() {
         "Teaching at prestigious clubs",
       ],
       certificates: [
-        "International Swimming Certificate",
+        "Intl. Swimming Cert",
         "Level 1 Coaching License",
         "Lifeguard Certificate",
         "Child Training Certification",
@@ -49,58 +88,173 @@ function CoachResume() {
   };
 
   const data = resumeData[language];
+  const currentStats = stats[language];
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section
+      className="py-20 bg-gray-50 overflow-hidden"
+      suppressHydrationWarning
+    >
       <div className="mx-auto max-w-6xl px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-gray-800 font-bold text-3xl mb-4">
+        {/* Section Header - Fade in on scroll only */}
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="text-center mb-16 px-4 flex flex-col items-center"
+        >
+          <span className="inline-block px-4 py-1.5 bg-blue-100/50 text-primary text-sm font-bold rounded-full mb-6 tracking-wide border border-blue-200">
             {t("coachResume")}
+          </span>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-800 to-gray-500 pb-2">
+            {language === "fa" ? "۱۵ سال سابقه درخشان." : "Proven Excellence."}
           </h2>
-          <p className="text-lg text-gray-600">{t("experience15Years")}</p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-5">
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow">
-            <div className="w-16 h-16 bg-blue-100 flex justify-center rounded-full items-center mx-auto mb-6">
-              <FaChalkboardTeacher className="text-3xl text-blue-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">
-              {t("workExperience")}
-            </h3>
-            <ul className="text-gray-600 space-y-2">
-              {data.experience.map((item, index) => (
-                <li key={index}>{item}</li>
-              ))}
-            </ul>
-          </div>
+          <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto font-medium leading-relaxed">
+            {language === "fa"
+              ? "آموزش تخصصی شنا با تکیه بر تجربه و مدارک معتبر بین‌المللی."
+              : "15 years of specialized swimming instruction backed by recognized international certifications."}
+          </p>
+        </motion.div>
 
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow">
-            <div className="w-16 h-16 bg-blue-100 flex justify-center rounded-full items-center mx-auto mb-6">
-              <FaCertificate className="text-3xl text-green-600" />
+        {/* Bento Box Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 auto-rows-[minmax(160px,auto)]">
+          {/* Card 1: Experience (Slides in from LEFT) */}
+          <motion.div
+            initial={{ opacity: 0, x: -60 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="md:col-span-2 md:row-span-2 bg-gray-900 rounded-[2rem] p-8 text-white shadow-xl hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between group"
+          >
+            <div>
+              <div className="w-14 h-14 bg-gray-800 rounded-2xl flex items-center justify-center mb-6 border border-gray-700">
+                <FaChalkboardTeacher className="text-2xl text-blue-400" />
+              </div>
+              <h3 className="text-2xl font-bold mb-6">
+                {language === "fa" ? "سوابق کاری" : "Work Experience"}
+              </h3>
+              <div className="space-y-4">
+                {data.experience.map((item, index) => (
+                  <div key={index} className="flex items-center gap-4">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.8)] shrink-0" />
+                    <span className="text-gray-300 text-lg">{item}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">
-              {t("certificates")}
-            </h3>
-            <ul className="text-gray-600 space-y-2">
-              {data.certificates.map((item, index) => (
-                <li key={index}>{item}</li>
-              ))}
-            </ul>
-          </div>
+          </motion.div>
 
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center hover:shadow-xl transition-shadow">
-            <div className="w-16 h-16 bg-blue-100 flex justify-center rounded-full items-center mx-auto mb-6">
-              <FaTrophy className="text-3xl text-yellow-600" />
+          {/* Card 2: Years Experience (Pops/Scales in) */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+            className="bg-primary rounded-[2rem] p-8 text-white shadow-lg hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between relative overflow-hidden"
+          >
+            <div className="absolute -right-4 -top-4 opacity-10 text-9xl">
+              <FaSwimmer />
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">
-              {t("achievements")}
-            </h3>
-            <ul className="text-gray-600 space-y-3">
+            <FaSwimmer className="text-3xl text-blue-200 mb-4 relative z-10" />
+            <div className="relative z-10">
+              <div className="text-5xl font-extrabold mb-2">
+                {currentStats[0].value}
+              </div>
+              <div className="text-blue-100 font-medium text-lg">
+                {currentStats[0].label}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Card 3: Students Trained (Pops/Scales in) */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+            className="bg-white rounded-[2rem] p-8 text-gray-900 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between border border-gray-100"
+          >
+            <FaUsers className="text-3xl text-primary mb-4" />
+            <div>
+              <div className="text-5xl font-extrabold mb-2 text-gray-800">
+                {currentStats[1].value}
+              </div>
+              <div className="text-gray-500 font-medium text-lg">
+                {currentStats[1].label}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Card 4: Achievements (Slides in from RIGHT) */}
+          <motion.div
+            initial={{ opacity: 0, x: 60 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+            className="md:col-span-2 bg-white rounded-[2rem] p-8 border border-gray-100 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+          >
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
+                <FaTrophy className="text-xl text-amber-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800">
+                {language === "fa" ? "افتخارات کلیدی" : "Key Achievements"}
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {data.achievements.map((item, index) => (
-                <li key={index}>{item}</li>
+                <div
+                  key={index}
+                  className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-100"
+                >
+                  <FaAward className="text-amber-500 shrink-0" />
+                  <span className="text-gray-700 text-sm font-medium">
+                    {item}
+                  </span>
+                </div>
               ))}
-            </ul>
-          </div>
+            </div>
+          </motion.div>
+
+          {/* Card 5: Certificates (Slides up from BOTTOM) */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-20px" }}
+            transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+            className="md:col-span-4 bg-emerald-50 rounded-[2rem] p-8 border border-emerald-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col md:flex-row items-start md:items-center gap-8"
+          >
+            <div className="shrink-0 flex items-center gap-4">
+              <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
+                <FaCertificate className="text-2xl" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-emerald-950">
+                  {language === "fa"
+                    ? "گواهینامه‌های رسمی"
+                    : "Official Certifications"}
+                </h3>
+                <p className="text-emerald-700/80 font-medium">
+                  {language === "fa"
+                    ? "مدارک معتبر بین‌المللی و ملی"
+                    : "Recognized national and international credentials"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-wrap gap-3 md:justify-end">
+              {data.certificates.map((item, index) => (
+                <span
+                  key={index}
+                  className="px-5 py-3 bg-white text-emerald-800 rounded-full text-sm font-bold shadow-sm border border-emerald-100 flex items-center gap-2"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  {item}
+                </span>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>

@@ -28,7 +28,13 @@
 body {
   background: var(--background);
   color: var(--text-dark);
-  font-family: var(--font-vazirmatn), sans-serif !important;
+  font-family: var(--font-poppins), sans-serif;
+}
+
+/* Farsi text should use Vazirmatn */
+html[lang="fa"] body,
+.farsi-text {
+  font-family: var(--font-vazirmatn), sans-serif;
 }
 .bg-surface {
   background-color: var(--surface);

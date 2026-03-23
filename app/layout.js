@@ -3,7 +3,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/app/lib/queryClient";
 import NavBar from "@/app/components/layout/NavBar";
 import "@/app/_styles/globals.css";
-import { Vazirmatn } from "next/font/google";
+import { Vazirmatn, Poppins } from "next/font/google";
 import Footer from "./components/layout/Footer";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/authContext";
@@ -18,14 +18,24 @@ const vazirmatn = Vazirmatn({
   variable: "--font-vazirmatn",
 });
 
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+});
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" dir="ltr" className={`${vazirmatn.variable} `}>
+    <html
+      lang="en"
+      dir="ltr"
+      className={`${vazirmatn.variable} ${poppins.variable}`}
+    >
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className={vazirmatn.className}>
+      <body className={`${poppins.className}`}>
         <ErrorBoundary>
           <QueryClientProvider client={queryClient}>
             <LanguageProvider>

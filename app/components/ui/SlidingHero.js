@@ -5,17 +5,19 @@ import HeroImage from "@/public/images/registerHero.jpg";
 import ProductImage from "@/public/images/productsHero.jpg";
 import CoachImage from "@/public/images/coachHero.jpg";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLanguage } from "@/app/contexts/LanguageContext";
 
 function SlidingHero() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  const timerRef = useRef(null);
   const { t } = useLanguage();
 
   // Minimum swipe distance (in px) to trigger slide change
   const minSwipeDistance = 50;
+  const autoScrollInterval = 4000; // 4 seconds
 
   const slides = [
     {
@@ -57,15 +59,27 @@ function SlidingHero() {
     }
   };
 
-  useEffect(() => {
-    const timer = setInterval(() => {
+  // Setup auto-scroll with ability to reset
+  const setupAutoScroll = () => {
+    // Clear existing timer
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    // Set new timer
+    timerRef.current = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % 3);
-    }, 4000);
-    return () => clearInterval(timer);
+    }, autoScrollInterval);
+  };
+
+  useEffect(() => {
+    setupAutoScroll();
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
 
   const onTouchStart = (e) => {
-    setTouchEnd(null); // Reset touchEnd
+    setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
   };
 
@@ -83,11 +97,22 @@ function SlidingHero() {
     if (isLeftSwipe) {
       // Swipe left - go to next slide
       setCurrentSlide((prev) => (prev + 1) % 3);
+      setupAutoScroll(); // Reset auto-scroll timer
     }
     if (isRightSwipe) {
       // Swipe right - go to previous slide
       setCurrentSlide((prev) => (prev - 1 + 3) % 3);
+      setupAutoScroll(); // Reset auto-scroll timer
     }
+
+    // Reset touch positions
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
+  const handleDotClick = (index) => {
+    setCurrentSlide(index);
+    setupAutoScroll(); // Reset auto-scroll timer when user clicks dot
   };
 
   return (
@@ -102,7 +127,7 @@ function SlidingHero() {
           <section
             key={slide.id}
             className={`inset-0 flex justify-center items-center flex-col absolute h-[70vh] text-center overflow-hidden transition-transform transform ease-in-out duration-1000 ${getTransform(
-              index
+              index,
             )}`}
           >
             <div className="top-0 left-0 absolute w-full h-full -z-10">
@@ -138,8 +163,9 @@ function SlidingHero() {
               key={index}
               className={`${
                 currentSlide === index ? "bg-white" : "bg-gray-600"
-              } rounded-full h-3 w-3 transition-colors cursor-pointer`}
-              onClick={() => setCurrentSlide(index)}
+              } rounded-full h-3 w-3 transition-colors cursor-pointer hover:scale-110 transition-transform`}
+              onClick={() => handleDotClick(index)}
+              aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
