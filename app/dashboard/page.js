@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import ProtectedRoute from "@/app/auth/ProtectedRoute";
 import Link from "next/link";
 import { useLanguage } from "@/app/contexts/LanguageContext";
+import { formatPrice, formatPriceNumber } from "@/app/lib/formatCurrency";
 
 function DashboardPage() {
   const { user, logout } = useAuth();
@@ -163,7 +164,7 @@ function DashboardPage() {
                   </p>
                   <p>
                     <strong>{t("balance")}:</strong>{" "}
-                    {user?.balance?.toLocaleString()} {t("toman")}
+                    {formatPrice(user?.balance || 0)}
                   </p>
                 </div>
 
@@ -377,7 +378,7 @@ function DashboardPage() {
                     <h4 className="font-bold text-lg">{selectedClass.title}</h4>
                     <p className="text-gray-600">
                       {language === "fa" ? "قیمت" : "Price"}:{" "}
-                      {selectedClass.price.toLocaleString()} {t("toman")}
+                      {formatPrice(selectedClass.price)}
                     </p>
                     <div className="mt-4 flex gap-4">
                       <button

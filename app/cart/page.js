@@ -8,6 +8,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { MdDelete, MdAdd, MdRemove } from "react-icons/md";
 import { useLanguage } from "../contexts/LanguageContext";
+import { formatPrice, formatPriceNumber } from "@/app/lib/formatCurrency";
 
 // Helper function to get proper image URL
 const getImageUrl = (imagePath) => {
@@ -112,11 +113,9 @@ function CartPage() {
                 <div>
                   <h3 className="font-bold text-gray-800">{item.name}</h3>
                   <p className="text-gray-600">
-                    {(typeof item.price === "number"
-                      ? item.price
-                      : 0
-                    ).toLocaleString()}{" "}
-                    {t("toman")}
+                    {formatPrice(
+                      typeof item.price === "number" ? item.price : 0,
+                    )}
                   </p>
                 </div>
               </div>
@@ -139,11 +138,10 @@ function CartPage() {
                 </div>
 
                 <div className="text-lg font-bold text-primary">
-                  {(
+                  {formatPrice(
                     (typeof item.price === "number" ? item.price : 0) *
-                    item.quantity
-                  ).toLocaleString()}{" "}
-                  {t("toman")}
+                      item.quantity,
+                  )}
                 </div>
 
                 <button
@@ -162,7 +160,7 @@ function CartPage() {
           <div className="flex justify-between items-center mb-4">
             <span className="text-xl font-bold">{t("total")}</span>
             <span className="text-2xl font-bold text-primary">
-              {getTotalPrice().toLocaleString()} {t("toman")}
+              {formatPrice(getTotalPrice())}
             </span>
           </div>
 
@@ -219,8 +217,8 @@ function CartPage() {
               {cartPaymentMutation?.isLoading
                 ? t("loading") + "..."
                 : isAuthenticated
-                ? t("payment")
-                : t("loginAndPay")}
+                  ? t("payment")
+                  : t("loginAndPay")}
             </button>
           </div>
         </div>

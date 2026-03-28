@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useProducts, useDeleteProduct } from "@/app/hooks/useProducts";
+import { formatPrice } from "@/app/lib/formatCurrency";
 import ProductForm from "./ProductsForm"; // Import the actual form component
 
 function ProductsTab() {
@@ -105,9 +106,7 @@ function ProductsTab() {
               {products?.map((product) => (
                 <tr key={product._id} className="border-b">
                   <td className="px-4 py-2">{product.name}</td>
-                  <td className="px-4 py-2">
-                    £{product.price.toLocaleString()}
-                  </td>
+                  <td className="px-4 py-2">{formatPrice(product.price)}</td>
                   <td className="px-4 py-2">{product.category}</td>
                   <td className="px-4 py-2">
                     <span

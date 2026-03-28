@@ -1,6 +1,6 @@
 import CoachResume from "./components/ui/CoachResume";
 
-import ChildrenSafetySection from "./components/ui/ChildrenSafetySection ";
+import ChildrenSafetySection from "./components/ui/ChildrenSafetySection";
 import SlidingHero from "./components/ui/SlidingHero";
 import FeaturedProducts from "./components/ui/FeaturedProducts";
 import ClassRegister from "./components/ui/ClassRegister";

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useClasses } from "@/app/hooks/useClasses";
 import { useAuth } from "@/app/contexts/authContext";
 import { useLanguage } from "@/app/contexts/LanguageContext";
+import { formatPrice } from "@/app/lib/formatCurrency";
 import {
   MdAccessTime,
   MdCalendarToday,
@@ -111,12 +112,7 @@ function ClassRegister() {
               >
                 <h3 className="text-xl font-bold mb-2">{cls.title}</h3>
                 <div className="text-3xl font-bold">
-                  {cls.price === 0
-                    ? t("freeClass")
-                    : cls.price.toLocaleString("en-GB", {
-                        style: "currency",
-                        currency: "GBP",
-                      })}
+                  {cls.price === 0 ? t("freeClass") : formatPrice(cls.price)}
                 </div>
                 {cls.price > 0 && <div className="text-sm opacity-90">GBP</div>}
                 {cls.price === 0 && (

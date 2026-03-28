@@ -9,25 +9,10 @@ import {
   FaAward,
 } from "react-icons/fa";
 import { useLanguage } from "@/app/contexts/LanguageContext";
-import { motion } from "framer-motion";
 
 function CoachResume() {
   const { t, language } = useLanguage();
   const isRtl = language === "fa";
-
-  // Animation variants (consistent across server/client)
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1, delayChildren: 0.2 },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  };
 
   const stats = {
     fa: [
@@ -96,14 +81,8 @@ function CoachResume() {
       suppressHydrationWarning
     >
       <div className="mx-auto max-w-6xl px-4">
-        {/* Section Header - Fade in on scroll only */}
-        <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="text-center mb-16 px-4 flex flex-col items-center"
-        >
+        {/* Section Header */}
+        <div className="text-center mb-16 px-4 flex flex-col items-center">
           <span className="inline-block px-4 py-1.5 bg-blue-100/50 text-primary text-sm font-bold rounded-full mb-6 tracking-wide border border-blue-200">
             {t("coachResume")}
           </span>
@@ -115,18 +94,11 @@ function CoachResume() {
               ? "آموزش تخصصی شنا با تکیه بر تجربه و مدارک معتبر بین‌المللی."
               : "15 years of specialized swimming instruction backed by recognized international certifications."}
           </p>
-        </motion.div>
-
+        </div>
         {/* Bento Box Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 auto-rows-[minmax(160px,auto)]">
-          {/* Card 1: Experience (Slides in from LEFT) */}
-          <motion.div
-            initial={{ opacity: 0, x: -60 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-            className="md:col-span-2 md:row-span-2 bg-gray-900 rounded-[2rem] p-8 text-white shadow-xl hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between group"
-          >
+          {/* Card 1: Experience */}
+          <div className="md:col-span-2 md:row-span-2 bg-gray-900 rounded-[2rem] p-8 text-white shadow-xl hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between group">
             <div>
               <div className="w-14 h-14 bg-gray-800 rounded-2xl flex items-center justify-center mb-6 border border-gray-700">
                 <FaChalkboardTeacher className="text-2xl text-blue-400" />
@@ -143,16 +115,10 @@ function CoachResume() {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Card 2: Years Experience (Pops/Scales in) */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-            className="bg-primary rounded-[2rem] p-8 text-white shadow-lg hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between relative overflow-hidden"
-          >
+          {/* Card 2: Years Experience */}
+          <div className="bg-primary rounded-[2rem] p-8 text-white shadow-lg hover:-translate-y-1 transition-transform duration-300 flex flex-col justify-between relative overflow-hidden">
             <div className="absolute -right-4 -top-4 opacity-10 text-9xl">
               <FaSwimmer />
             </div>
@@ -165,16 +131,10 @@ function CoachResume() {
                 {currentStats[0].label}
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Card 3: Students Trained (Pops/Scales in) */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
-            className="bg-white rounded-[2rem] p-8 text-gray-900 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between border border-gray-100"
-          >
+          {/* Card 3: Students Trained */}
+          <div className="bg-white rounded-[2rem] p-8 text-gray-900 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between border border-gray-100">
             <FaUsers className="text-3xl text-primary mb-4" />
             <div>
               <div className="text-5xl font-extrabold mb-2 text-gray-800">
@@ -184,16 +144,10 @@ function CoachResume() {
                 {currentStats[1].label}
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Card 4: Achievements (Slides in from RIGHT) */}
-          <motion.div
-            initial={{ opacity: 0, x: 60 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-            className="md:col-span-2 bg-white rounded-[2rem] p-8 border border-gray-100 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-          >
+          {/* Card 4: Achievements */}
+          <div className="md:col-span-2 bg-white rounded-[2rem] p-8 border border-gray-100 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
                 <FaTrophy className="text-xl text-amber-500" />
@@ -215,16 +169,10 @@ function CoachResume() {
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
-          {/* Card 5: Certificates (Slides up from BOTTOM) */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-20px" }}
-            transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-            className="md:col-span-4 bg-emerald-50 rounded-[2rem] p-8 border border-emerald-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col md:flex-row items-start md:items-center gap-8"
-          >
+          {/* Card 5: Certificates */}
+          <div className="md:col-span-4 bg-emerald-50 rounded-[2rem] p-8 border border-emerald-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col md:flex-row items-start md:items-center gap-8">
             <div className="shrink-0 flex items-center gap-4">
               <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
                 <FaCertificate className="text-2xl" />
@@ -254,7 +202,7 @@ function CoachResume() {
                 </span>
               ))}
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

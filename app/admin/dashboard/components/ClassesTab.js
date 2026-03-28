@@ -2,6 +2,7 @@
 "use client";
 import { useState } from "react";
 import { useClasses, useDeleteClass } from "@/app/hooks/useClasses";
+import { formatPrice } from "@/app/lib/formatCurrency";
 import ClassForm from "./ClassForm";
 
 function ClassesTab() {
@@ -102,7 +103,7 @@ function ClassesTab() {
                     {new Date(cls.date).toLocaleDateString("fa-IR")}
                   </td>
                   <td className="px-4 py-2">{cls.time}</td>
-                  <td className="px-4 py-2">£{cls.price.toLocaleString()}</td>
+                  <td className="px-4 py-2">{formatPrice(cls.price)}</td>
                   <td className="px-4 py-2">
                     <button
                       onClick={() => handleEdit(cls)}

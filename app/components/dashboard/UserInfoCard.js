@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useLanguage } from "@/app/contexts/LanguageContext";
+import { formatPrice } from "@/app/lib/formatCurrency";
 
 export function UserInfoCard({ user, onLogout }) {
   const [showChargeForm, setShowChargeForm] = useState(false);
@@ -46,8 +47,7 @@ export function UserInfoCard({ user, onLogout }) {
           <strong>{t("email")}:</strong> {user?.email}
         </p>
         <p>
-          <strong>{t("balance")}:</strong> {user?.balance?.toLocaleString()}{" "}
-          {t("toman")}
+          <strong>{t("balance")}:</strong> {formatPrice(user?.balance || 0)}
         </p>
         <p>
           <strong>{t("skillLevel")}:</strong> {user?.skillLevel}

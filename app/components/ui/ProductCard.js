@@ -4,6 +4,7 @@ import { MdShoppingCart } from "react-icons/md";
 import { useCart } from "@/app/contexts/CartContext";
 import { useState } from "react";
 import { useLanguage } from "@/app/contexts/LanguageContext";
+import { formatPrice } from "@/app/lib/formatCurrency";
 
 function ProductCard({ product }) {
   const { addToCart } = useCart();
@@ -22,10 +23,7 @@ function ProductCard({ product }) {
     });
   };
 
-  const displayPrice =
-    typeof product.price === "string"
-      ? product.price
-      : product.price.toLocaleString();
+  const displayPrice = formatPrice(product.price);
 
   const getImageSrc = () => {
     if (!product.image || imageError) {
@@ -84,7 +82,7 @@ function ProductCard({ product }) {
 
         <div className="text-center mb-4">
           <span className="text-xl sm:text-2xl font-bold text-primary">
-            £{displayPrice}
+            {displayPrice}
           </span>
         </div>
 
