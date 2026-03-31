@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
-import { useAdmin } from "@/app/contexts/AdminContext";
+import { useAdminAuth } from "@/app/contexts/AdminContext";
 import { useCart } from "@/app/contexts/CartContext";
 import { MdShoppingCart } from "react-icons/md";
 
 function CartIcon({ pathname }) {
-  const { isAuthenticated: adminAuth } = useAdmin();
+  const { isAuthenticated: adminAuth } = useAdminAuth();
   const { getTotalItems } = useCart();
 
   if (adminAuth) return null;

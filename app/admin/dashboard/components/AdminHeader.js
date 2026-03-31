@@ -1,8 +1,8 @@
 "use client";
-import { useAdmin } from "@/app/contexts/AdminContext";
+import { useAdminAuth } from "@/app/contexts/AdminContext";
 
 function AdminHeader() {
-  const { admin, logout } = useAdmin();
+  const { admin, logout } = useAdminAuth();
 
   const handleLogout = async () => {
     await logout();

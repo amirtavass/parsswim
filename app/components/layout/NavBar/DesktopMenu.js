@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/app/contexts/authContext";
-import { useAdmin } from "@/app/contexts/AdminContext";
+import { useAdminAuth } from "@/app/contexts/AdminContext";
 import { useLanguage } from "@/app/contexts/LanguageContext"; // ADD THIS
 import { MdLanguage } from "react-icons/md"; // ADD THIS
 import AdminMenu from "./AdminMenu";
@@ -11,7 +11,8 @@ import GuestMenu from "./GuestMenu";
 function DesktopMenu({ pathname }) {
   const { language, toggleLanguage, t } = useLanguage(); // ADD THIS
   const { isAuthenticated: userAuth, isLoading: userLoading } = useAuth();
-  const { isAuthenticated: adminAuth, isLoading: adminLoading } = useAdmin();
+  const { isAuthenticated: adminAuth, isLoading: adminLoading } =
+    useAdminAuth();
 
   if (userLoading || adminLoading) return null;
 

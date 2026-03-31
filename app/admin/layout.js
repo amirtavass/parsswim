@@ -1,11 +1,12 @@
 "use client";
-import { useAdmin } from "@/app/contexts/AdminContext";
+import { useAdminAuth } from "@/app/contexts/AdminContext";
 import { useAuth } from "@/app/contexts/authContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function AdminLayout({ children }) {
-  const { isAuthenticated: adminAuth, isLoading: adminLoading } = useAdmin();
+  const { isAuthenticated: adminAuth, isLoading: adminLoading } =
+    useAdminAuth();
   const { isAuthenticated: userAuth, logout: userLogout } = useAuth();
   const router = useRouter();
 

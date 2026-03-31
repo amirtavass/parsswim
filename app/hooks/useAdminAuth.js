@@ -1,12 +1,12 @@
 // hooks/useAdminAuth.js
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/app/lib/api";
-import { useAdmin } from "@/app/contexts/AdminContext";
+import { useAdminAuth } from "@/app/contexts/AdminContext";
 import { useAuth } from "@/app/contexts/authContext";
 
 // Admin Login Hook
 export const useAdminLogin = () => {
-  const { login: adminLogin } = useAdmin();
+  const { login: adminLogin } = useAdminAuth();
   const { logout: userLogout } = useAuth();
   const queryClient = useQueryClient();
 
@@ -42,7 +42,7 @@ export const useAdminLogin = () => {
 
 // Admin Logout Hook
 export const useAdminLogout = () => {
-  const { logout: adminLogout } = useAdmin();
+  const { logout: adminLogout } = useAdminAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -65,7 +65,7 @@ export const useAdminLogout = () => {
 
 // Check Admin Authentication Status
 export const useAdminCheck = () => {
-  const { login, logout } = useAdmin();
+  const { login, logout } = useAdminAuth();
 
   return useQuery({
     queryKey: ["admin", "me"],

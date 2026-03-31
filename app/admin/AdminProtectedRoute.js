@@ -1,10 +1,10 @@
 "use client";
-import { useAdmin } from "@/app/contexts/AdminContext";
+import { useAdminAuth } from "@/app/contexts/AdminContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 function AdminProtectedRoute({ children, redirectTo = "/admin/login" }) {
-  const { isAuthenticated, isLoading } = useAdmin();
+  const { isAuthenticated, isLoading } = useAdminAuth();
   const router = useRouter();
 
   useEffect(() => {

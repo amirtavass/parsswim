@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
-import { useAdmin } from "@/app/contexts/AdminContext";
+import { useAdminAuth } from "@/app/contexts/AdminContext";
 import { useLanguage } from "@/app/contexts/LanguageContext";
 
 function AdminMenu({ pathname }) {
-  const { admin, logout } = useAdmin();
+  const { admin, logout } = useAdminAuth();
   const { language, t } = useLanguage();
 
   const handleLogout = async () => {

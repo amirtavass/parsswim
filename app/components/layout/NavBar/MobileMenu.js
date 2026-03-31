@@ -1,13 +1,17 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/app/contexts/authContext";
-import { useAdmin } from "@/app/contexts/AdminContext";
+import { useAdminAuth } from "@/app/contexts/AdminContext";
 import { useLanguage } from "@/app/contexts/LanguageContext";
 import { MdLanguage } from "react-icons/md";
 
 function MobileMenu({ pathname, onClose }) {
   const { isAuthenticated: userAuth, user, logout: userLogout } = useAuth();
-  const { isAuthenticated: adminAuth, admin, logout: adminLogout } = useAdmin();
+  const {
+    isAuthenticated: adminAuth,
+    admin,
+    logout: adminLogout,
+  } = useAdminAuth();
   const { language, toggleLanguage, t } = useLanguage();
 
   const handleUserLogout = async () => {
