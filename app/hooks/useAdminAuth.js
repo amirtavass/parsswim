@@ -1,89 +1,30 @@
 // hooks/useAdminAuth.js
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/app/lib/api";
-import { useAdminAuth } from "@/app/contexts/AdminContext";
-import { useAuth } from "@/app/contexts/authContext";
+import { useAdminAuth as useAdminContext } from "@/app/contexts/AdminContext";
+import { useAuth as useUserContext } from "@/app/contexts/authContext";
+import { CreateAuthHooks } from "./CreateAuthHooks";
 
-// Admin Login Hook
+const { useGenericLogin, useGenericLogout } = CreateAuthHooks(
+  "admin",
+  "admin",
+  useAdminContext,
+);
+
+export const useAdminLogout = () => useGenericLogout();
+
 export const useAdminLogin = () => {
-  const { login: adminLogin } = useAdminAuth();
-  const { logout: userLogout } = useAuth();
-  const queryClient = useQueryClient();
+  const { logout: userLogout } = useUserContext();
 
-  return useMutation({
-    mutationFn: async ({ username, password }) => {
-      // First logout any existing user session
-      try {
-        await api.post("/auth/logout");
-      } catch (error) {
-        // Ignore logout errors
-      }
+  const adminLoginWithUserLogoutFn = async ({ username, password }) => {
+    try {
+      await api.post("/auth/logout");
+    } catch (error) {}
 
-      // Clear user auth state
-      userLogout();
+    userLogout();
 
-      // Login as admin
-      const response = await api.post("/admin/login", { username, password });
-      return response.data;
-    },
-    onSuccess: (data) => {
-      if (data.success && data.admin) {
-        adminLogin(data.admin);
-        // Clear all queries and refetch admin status
-        queryClient.clear();
-        queryClient.invalidateQueries(["admin", "me"]);
-      }
-    },
-    onError: (error) => {
-      console.error("Admin login failed:", error.response?.data || error);
-    },
-  });
-};
+    const response = await api.post("/admin/login", { username, password });
+    return response.data;
+  };
 
-// Admin Logout Hook
-export const useAdminLogout = () => {
-  const { logout: adminLogout } = useAdminAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      const response = await api.post("/admin/logout");
-      return response.data;
-    },
-    onSuccess: () => {
-      adminLogout();
-      queryClient.clear();
-    },
-    onError: (error) => {
-      console.error("Admin logout error:", error);
-      // Still logout locally even if API fails
-      adminLogout();
-      queryClient.clear();
-    },
-  });
-};
-
-// Check Admin Authentication Status
-export const useAdminCheck = () => {
-  const { login, logout } = useAdminAuth();
-
-  return useQuery({
-    queryKey: ["admin", "me"],
-    queryFn: async () => {
-      const response = await api.get("/admin/me");
-      return response.data;
-    },
-    onSuccess: (data) => {
-      if (data.success && data.admin) {
-        login(data.admin);
-      }
-    },
-    onError: (error) => {
-      if (error.response?.status === 401) {
-        logout();
-      }
-    },
-    retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  return useGenericLogin(adminLoginWithUserLogoutFn);
 };
