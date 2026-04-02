@@ -35,12 +35,9 @@ function ProductCard({ product }) {
 
     if (imageSrc.startsWith("/uploads/")) {
       // Dynamically determine API URL based on environment
-      const apiUrl =
-        typeof window !== "undefined"
-          ? window.location.hostname === "localhost"
-            ? "http://localhost:4000"
-            : "https://parsswim-backend-production.up.railway.app"
-          : "http://localhost:4000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+        ? process.env.NEXT_PUBLIC_API_URL.replace("/api", "")
+        : "http://localhost:4000";
 
       return `${apiUrl}${imageSrc}`;
     }

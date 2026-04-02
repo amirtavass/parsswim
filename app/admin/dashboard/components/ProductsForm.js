@@ -17,14 +17,7 @@ function ProductForm({ editingProduct, onClose, onSuccess }) {
 
   // Get API URL dynamically
   const getApiUrl = () => {
-    if (typeof window !== "undefined") {
-      const hostname = window.location.hostname;
-      if (hostname === "localhost" || hostname === "127.0.0.1") {
-        return "http://localhost:4000";
-      }
-      return "https://parsswim-backend-production.up.railway.app";
-    }
-    return "http://localhost:4000";
+    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
   };
 
   const handleImageUpload = async (file) => {

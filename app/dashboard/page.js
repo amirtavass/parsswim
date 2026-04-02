@@ -110,10 +110,9 @@ function DashboardPage() {
     }
 
     // Get the correct API URL
-    const apiUrl =
-      window.location.hostname === "localhost"
-        ? "http://localhost:4000"
-        : "https://parsswim-backend-production.up.railway.app";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      ? process.env.NEXT_PUBLIC_API_URL.replace("/api", "")
+      : "http://localhost:4000";
 
     // Create a form and submit it (instead of fetch)
     const form = document.createElement("form");
