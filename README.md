@@ -4,8 +4,7 @@ A comprehensive full-stack web application for swimming instructors built with *
 
 ## 🌐 Live Demo
 
-**Main Website**: [https://parsswim.ir](https://parsswim.ir)  
-**Backend API**: [https://parsswim-backend-production.up.railway.app/](https://parsswim-backend-production.up.railway.app/)
+**Main Website**: [https://parsswim.dev/](https://parsswim.dev/)
 
 ## 🎯 About
 
