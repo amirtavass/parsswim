@@ -17,14 +17,11 @@ const getImageUrl = (imagePath) => {
   // If it's already a full URL, return as is
   if (imagePath.startsWith("http")) return imagePath;
 
-  // If it's an upload path, prepend the API URL
+  // If it's an upload path, prepend the API URL dynamically
   if (imagePath.startsWith("/uploads")) {
-    const apiUrl =
-      typeof window !== "undefined"
-        ? window.location.hostname === "localhost"
-          ? "http://localhost:4000"
-          : "https://parsswim-backend-production.up.railway.app"
-        : "http://localhost:4000";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      ? process.env.NEXT_PUBLIC_API_URL.replace("/api", "")
+      : "http://localhost:4000";
     return `${apiUrl}${imagePath}`;
   }
 
