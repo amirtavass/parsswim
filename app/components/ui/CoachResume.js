@@ -172,37 +172,6 @@ function CoachResume() {
           </div>
 
           {/* Card 5: Certificates */}
-          <div className="md:col-span-4 bg-emerald-50 rounded-[2rem] p-8 border border-emerald-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col md:flex-row items-start md:items-center gap-8">
-            <div className="shrink-0 flex items-center gap-4">
-              <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
-                <FaCertificate className="text-2xl" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-emerald-950">
-                  {language === "fa"
-                    ? "گواهینامه‌های رسمی"
-                    : "Official Certifications"}
-                </h3>
-                <p className="text-emerald-700/80 font-medium">
-                  {language === "fa"
-                    ? "مدارک معتبر بین‌المللی و ملی"
-                    : "Recognized national and international credentials"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex-1 flex flex-wrap gap-3 md:justify-end">
-              {data.certificates.map((item, index) => (
-                <span
-                  key={index}
-                  className="px-5 py-3 bg-white text-emerald-800 rounded-full text-sm font-bold shadow-sm border border-emerald-100 flex items-center gap-2"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </section>
