@@ -18,7 +18,7 @@ router.post("/cart", async (req, res) => {
     // Use production URL when in production, localhost for development
     const frontendUrl =
       process.env.NODE_ENV === "production"
-        ? "https://parsswim.ir"
+        ? "https://parsswim.dev"
         : "http://localhost:3000";
     const backendUrl =
       process.env.NODE_ENV === "production"
@@ -114,7 +114,7 @@ router.get("/balance-callback", async (req, res) => {
   try {
     const frontendUrl =
       process.env.NODE_ENV === "production"
-        ? "https://parsswim.ir"
+        ? "https://parsswim.dev"
         : "http://localhost:3000";
 
     if (req.query.Status && req.query.Status !== "OK") {

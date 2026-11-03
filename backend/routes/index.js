@@ -31,7 +31,7 @@ router.get("/cart", (req, res) => {
   const payment = req.query.payment || "unknown";
   const frontendUrl =
     process.env.NODE_ENV === "production"
-      ? "https://parsswim.ir"
+      ? "https://parsswim.dev"
       : "http://localhost:3000";
   res.redirect(`${frontendUrl}/cart?payment=${payment}`);
 });

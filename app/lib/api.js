@@ -8,8 +8,8 @@ const getApiBaseUrl = () => {
 
     if (hostname === "localhost" || hostname === "127.0.0.1") {
       return "http://localhost:4000";
-    } else if (hostname === "parsswim.ir" || hostname === "www.parsswim.ir") {
-      return "https://parsswim.ir/api";
+    } else if (hostname === "parsswim.dev" || hostname === "www.parsswim.dev") {
+      return "https://parsswim.dev/api";
     } else {
       // For other deployments
       return process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";

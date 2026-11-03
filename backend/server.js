@@ -50,8 +50,8 @@ app.use(cookieParser());
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
-      "https://parsswim.ir",
-      "https://www.parsswim.ir",
+      "https://parsswim.dev",
+      "https://www.parsswim.dev",
       "http://localhost:3000",
       "http://127.0.0.1:3000",
     ];
@@ -279,7 +279,7 @@ app.get("/dashboard/paycallback", async (req, res) => {
 
     if (req.query.Status && req.query.Status !== "OK") {
       const frontendUrl = isProduction
-        ? "https://parsswim.ir"
+        ? "https://parsswim.dev"
         : "http://localhost:3000";
       return res.redirect(`${frontendUrl}/dashboard?payment=cancelled`);
     }
@@ -290,7 +290,7 @@ app.get("/dashboard/paycallback", async (req, res) => {
 
     if (!paymentRecord) {
       const frontendUrl = isProduction
-        ? "https://parsswim.ir"
+        ? "https://parsswim.dev"
         : "http://localhost:3000";
       return res.redirect(`${frontendUrl}/dashboard?payment=notfound`);
     }
@@ -319,19 +319,19 @@ app.get("/dashboard/paycallback", async (req, res) => {
       });
 
       const frontendUrl = isProduction
-        ? "https://parsswim.ir"
+        ? "https://parsswim.dev"
         : "http://localhost:3000";
       return res.redirect(`${frontendUrl}/dashboard?payment=success`);
     } else {
       const frontendUrl = isProduction
-        ? "https://parsswim.ir"
+        ? "https://parsswim.dev"
         : "http://localhost:3000";
       return res.redirect(`${frontendUrl}/dashboard?payment=failed`);
     }
   } catch (err) {
     console.error("Dashboard payment callback error:", err);
     const frontendUrl = isProduction
-      ? "https://parsswim.ir"
+      ? "https://parsswim.dev"
       : "http://localhost:3000";
     res.redirect(`${frontendUrl}/dashboard?payment=error`);
   }
@@ -345,7 +345,7 @@ app.get("/paycallback", async (req, res) => {
     // If payment was cancelled
     if (req.query.Status && req.query.Status !== "OK") {
       const frontendUrl = isProduction
-        ? "https://parsswim.ir"
+        ? "https://parsswim.dev"
         : "http://localhost:3000";
       return res.redirect(`${frontendUrl}/cart?payment=cancelled`);
     }
@@ -356,7 +356,7 @@ app.get("/paycallback", async (req, res) => {
 
     if (!paymentRecord) {
       const frontendUrl = isProduction
-        ? "https://parsswim.ir"
+        ? "https://parsswim.dev"
         : "http://localhost:3000";
       return res.redirect(`${frontendUrl}/cart?payment=notfound`);
     }
@@ -380,19 +380,19 @@ app.get("/paycallback", async (req, res) => {
       await paymentRecord.save();
 
       const frontendUrl = isProduction
-        ? "https://parsswim.ir"
+        ? "https://parsswim.dev"
         : "http://localhost:3000";
       return res.redirect(`${frontendUrl}/cart?payment=success`);
     } else {
       const frontendUrl = isProduction
-        ? "https://parsswim.ir"
+        ? "https://parsswim.dev"
         : "http://localhost:3000";
       return res.redirect(`${frontendUrl}/cart?payment=failed`);
     }
   } catch (err) {
     console.error("Payment callback error:", err);
     const frontendUrl = isProduction
-      ? "https://parsswim.ir"
+      ? "https://parsswim.dev"
       : "http://localhost:3000";
     res.redirect(`${frontendUrl}/cart?payment=error`);
   }

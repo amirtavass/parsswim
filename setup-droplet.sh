@@ -139,7 +139,7 @@ cat > /etc/nginx/sites-available/parsswim <<'NGINX_CONFIG'
 server {
     listen 80;
     listen [::]:80;
-    server_name parsswim.ir www.parsswim.ir;
+    server_name parsswim.dev www.parsswim.dev;
     return 301 https://$server_name$request_uri;
 }
 
@@ -147,11 +147,11 @@ server {
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name parsswim.ir www.parsswim.ir;
+    server_name parsswim.dev www.parsswim.dev;
 
     # Placeholder - certbot will update these
-    ssl_certificate /etc/letsencrypt/live/parsswim.ir/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/parsswim.ir/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/parsswim.dev/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/parsswim.dev/privkey.pem;
 
     # SSL Configuration
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -226,7 +226,7 @@ echo ""
 echo "4. Install dependencies and start apps with PM2"
 echo ""
 echo "5. Set up SSL with:"
-echo "   sudo certbot --nginx -d parsswim.ir -d www.parsswim.ir -m amirtavass62@gmail.com"
+echo "   sudo certbot --nginx -d parsswim.dev -d www.parsswim.dev -m amirtavass62@gmail.com"
 echo ""
 echo "6. Point your domain DNS to: ${HOSTNAME} (IP: 161.35.174.84)"
 echo ""
