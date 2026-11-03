@@ -78,6 +78,7 @@ public/uploads/*
 
 # Environment & Configuration Files
 .env*
+!.env.example
 .environment
 .config
 config.local.*
@@ -117,6 +118,9 @@ tokens.*
 jwt-secret*
 stripe-keys*
 zarinpal-config*
+
+# Local migration backups (DB dumps + uploads) — never commit
+backups/
 
 # Backup Files
 *.bak
