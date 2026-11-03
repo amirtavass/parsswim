@@ -10,7 +10,8 @@
 | Auth/session | Passport local + JWT, `express-session` backed by Mongo |
 | Payments | Zarinpal (currently sandbox merchant id) |
 | Files | 65 Multer disk uploads (7,893,221 bytes) |
-| Database | MongoDB Atlas `parsswim-cluster`, DB `parsswim` |
+| Database (current) | MongoDB Atlas `parsswim-cluster`, DB `parsswim` |
+| Database (target) | **Azure Cosmos DB for MongoDB — free tier** |
 | Current infra | DigitalOcean droplet `161.35.174.84` running PM2 + Nginx; DNS hostname `parsswim.dev` |
 | Repo | `https://github.com/amirtavass/arman-portfolio` (`main`) |
 | Backups | DB dump + uploads extracted 2026-11-03, SHA-256 verified |
@@ -21,29 +22,35 @@ Related playbook: [violetwatch-lessons-learned.md](violetwatch-lessons-learned.m
 
 1. **DigitalOcean is retired.** Do not provision or keep DO resources. The
    ParsSwim droplet is to be retired after cutover.
-2. **AWS credit is protected, not spent on compute.** The account has a new
+2. **All Azure resources live in `germanywestcentral`.** This is a hard
+   subscription constraint discovered on VioletWatch — not a preference.
+3. **AWS credit is protected, not spent on compute.** The account has a new
    promotional tier: **$100 credit, 181 days remaining (2026-11-03)**. No
-   EC2/EIP/NAT/ALB. AWS usage is limited to S3 (pennies/month) and optional
-   backups, so credit expiry never forces a compute migration.
-3. **Compute must be $0 for 12–24 months.** Use the untouched Azure for Students
+   EC2/EIP/NAT/ALB. AWS usage is limited to S3 (pennies/month) and backups.
+4. **Compute must be $0 for 12–24 months.** Use the untouched Azure for Students
    Linux VM (`B2ats_v2` preferred, `B1s` fallback). Vercel + Heroku is a
    fallback only.
-4. **Live production must run at $0/month** after student entitlements; credits
+5. **Live production must run at $0/month** after student entitlements; credits
    must not be required to keep the site up.
-5. **Real AWS S3 in production, LocalStack locally.** The storage layer uses
+6. **Real AWS S3 in production, LocalStack locally.** The storage layer uses
    `@aws-sdk/client-s3`; it must run against LocalStack (Docker/WSL 2) and real
    S3 without code changes.
-6. **Database is MongoDB Atlas M0 (512 MB, always free).** No paid Atlas tiers.
-7. **Domain is `parsswim.dev` only.** The legacy `.ir` domain is expired and
+7. **Database moves off Atlas to a $0 alternative.** Chosen: **Azure Cosmos DB
+   for MongoDB free tier** (1000 RU/s + 25 GB), because the 1 GiB VM should not
+   also host MongoDB. Fallback if the free tier is unavailable/incompatible:
+   self-hosted MongoDB with a 0.25 GB WiredTiger cache + 2 GB swap.
+8. **Domain is `parsswim.dev` only.** The legacy `.ir` domain is expired and
    retired; do not plan registrar, nameserver, or DNS work for it.
-8. **Do not modify the live server or break it during planning.** Discovery is
+9. **Do not modify the live server or break it during planning.** Discovery is
    read-only; cutover changes happen in an explicitly approved phase.
 
 ## Goals
 
 - Keep `parsswim.dev` / `www.parsswim.dev` online over HTTPS on a $0/month
   architecture.
-- Retire the DigitalOcean droplet without data loss (Atlas data + 65 images).
+- Retire the DigitalOcean droplet without data loss (DB + 65 images).
+- Move the database from Atlas to Cosmos DB (or the self-hosted fallback) with
+  verified document counts.
 - Introduce a provider-agnostic S3 storage layer (real S3 in production,
   LocalStack in dev/CI).
 - Preserve existing behaviour: classes, products, cart, dashboard, admin CRUD,
@@ -61,24 +68,27 @@ Related playbook: [violetwatch-lessons-learned.md](violetwatch-lessons-learned.m
 ## Success criteria
 
 1. `https://parsswim.dev` and `https://www.parsswim.dev` serve the app over HTTPS.
-2. `/` and the API health endpoint return 200; `database: connected`.
+2. `/` and the API health endpoint return 200; `database: connected` (Cosmos).
 3. All 12 products, 4 classes, 4 users and 65 images are migrated and visible.
 4. Login (student/admin), admin product CRUD and image upload work end-to-end.
 5. Uploads are written to and read from S3 through the storage abstraction;
    LocalStack passes the same tests locally.
-6. The DigitalOcean droplet is snapshotted, then destroyed.
+6. The DigitalOcean droplet is snapshotted, then destroyed; the Atlas cluster is
+   disabled after Cosmos verification.
 7. Monthly run-rate is **$0** for compute/database/DNS; AWS S3 stays **< $1/mo**.
 8. AWS credit usage stays negligible and no EC2 resource exists.
 
-## Decision (2026-11-03 — definitive)
+## Decision (2026-11-03 — Phase 2)
 
 | Decision | Choice |
 | --- | --- |
+| Azure region | **`germanywestcentral`** (all resources) |
 | Compute | **Azure for Students Linux VM** (`B2ats_v2` / `B1s`), Nginx + PM2 — $0 for 12 months |
 | Compute fallback | Vercel (Next) + Heroku (Express) student credit — only if the Azure VM is unavailable |
+| Database | **Azure Cosmos DB for MongoDB free tier** (1000 RU/s + 25 GB) |
+| DB fallback | Self-hosted MongoDB on the VM, `wiredTigerCacheSizeGB: 0.25` + 2 GB swap |
 | Production object storage | **Amazon S3** (`parsswim-uploads` public, `parsswim-backups` private) via `@aws-sdk/client-s3` |
 | Local/CI object storage | **LocalStack** + Docker (WSL 2) |
-| Database | MongoDB Atlas **M0** (512 MB, always free) |
 | DNS / TLS | Cloudflare free, domain `parsswim.dev` only |
 | AWS credit | reserved for S3/backups; no compute |
 | Legacy `.ir` domain | expired and retired — no action |
@@ -89,8 +99,8 @@ by the month-10 exit to Azure App Service F1 (or the Vercel + Heroku split).
 
 ## Open questions
 
-1. **Azure SKU/region:** is `B2ats_v2` (or `B1s`) available in `uksouth` /
-   `westeurope` on the student subscription?
+1. **Cosmos free tier:** confirm no other account in the subscription already
+   enabled it (one free tier per subscription).
 2. **S3 region/bucket:** confirm `eu-west-2` and whether `parsswim-uploads` may
    be public-read (restricted to `uploads/*`) or should use presigned URLs.
 3. **Zarinpal:** keep sandbox during the migration or wire the production
