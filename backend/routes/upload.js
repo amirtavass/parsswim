@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const uploadUserProfile = require("../upload/uploadUserProfile");
+const storage = require("../lib/storage");
 
 // JWT-based admin middleware
 const adminJwt = require("../middlewares/adminJwt");
@@ -10,7 +11,7 @@ router.post("/product", adminJwt, (req, res) => {
   // Use multer middleware with proper error handling
   const upload = uploadUserProfile.single("image");
 
-  upload(req, res, (err) => {
+  upload(req, res, async (err) => {
     if (err) {
       console.error("Multer error:", err);
       return res.status(400).json({
@@ -27,22 +28,19 @@ router.post("/product", adminJwt, (req, res) => {
         });
       }
 
-      console.log("File uploaded successfully:", req.file);
+      const key = storage.buildUploadKey(req.file.originalname);
+      const uploaded = await storage.putObject(
+        key,
+        req.file.buffer,
+        req.file.mimetype,
+      );
 
-      // FIXED: Return proper image path like the old version
-      // Remove 'public' from path and ensure single leading slash
-      let imagePath = req.file.path.replace(/\\/g, "/").substring(6); // Remove 'public'
-
-      // Ensure path starts with single slash
-      if (!imagePath.startsWith("/")) {
-        imagePath = "/" + imagePath;
-      }
-
-      console.log("Final image path:", imagePath);
+      console.log("File uploaded successfully:", uploaded.key);
 
       res.json({
         success: true,
-        imagePath: imagePath, // Return clean path like: /uploads/images/filename.jpg
+        imagePath: `/${uploaded.key}`,
+        url: uploaded.url,
         message: "Image uploaded successfully",
         file: {
           originalName: req.file.originalname,

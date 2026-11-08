@@ -1,17 +1,22 @@
 const multer = require("multer");
-const { mkdirp } = require("mkdirp");
+const path = require("path");
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    mkdirp("./public/uploads/images").then((made) => {
-      cb(null, "./public/uploads/images");
-    });
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
+const allowedExtensions = /\.(jpe?g|png|gif|webp)$/i;
+const allowedMimeTypes = /^image\/(jpeg|jpg|png|gif|webp)$/i;
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const extname = allowedExtensions.test(path.extname(file.originalname || ""));
+    const mimetype = allowedMimeTypes.test(file.mimetype || "");
+
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+
+    cb(new Error("Only image files are allowed (jpg, png, gif, webp)"));
   },
 });
-
-const upload = multer({ storage: storage });
 
 module.exports = upload;

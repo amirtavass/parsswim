@@ -6,7 +6,10 @@ const MongoStore = require("connect-mongo");
 const path = require("path");
 const { mkdirp } = require("mkdirp");
 
-require("dotenv").config();
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+require("dotenv").config({ path: path.resolve(__dirname, ".env"), override: true });
+
+const storage = require("./lib/storage");
 
 console.log("🚀 Starting ParsSwim API Server...");
 
@@ -79,7 +82,14 @@ app.options("*", cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Static files
+// ✅ Uploads: redirect to S3 when configured, otherwise serve local disk
+app.use("/uploads", (req, res, next) => {
+  if (!storage.isConfigured()) return next();
+
+  const key = req.originalUrl.split("?")[0].replace(/^\/+/, "");
+  res.set("Cache-Control", "public, max-age=31536000, immutable");
+  res.redirect(302, storage.getPublicUrl(key));
+});
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 app.use(express.static("public"));
 

@@ -11,8 +11,10 @@
 | Payments | Zarinpal (currently sandbox merchant id) |
 | Files | 65 Multer disk uploads (7,893,221 bytes) |
 | Database (current) | MongoDB Atlas `parsswim-cluster`, DB `parsswim` |
-| Database (target) | **Azure Cosmos DB for MongoDB — free tier** |
+| Database (target) | **MongoDB Atlas M0 free tier (Ireland)** |
+| Storage (target) | **AWS S3 `eu-north-1`** (primary) or **Cloudflare R2** (fallback), both via the S3 API |
 | Current infra | DigitalOcean droplet `161.35.174.84` running PM2 + Nginx; DNS hostname `parsswim.dev` |
+| New infra | Azure for Students VM in **Ireland (`northeurope`)** running Next.js + Express + Nginx + PM2 |
 | Repo | `https://github.com/amirtavass/arman-portfolio` (`main`) |
 | Backups | DB dump + uploads extracted 2026-11-03, SHA-256 verified |
 
@@ -22,23 +24,22 @@ Related playbook: [violetwatch-lessons-learned.md](violetwatch-lessons-learned.m
 
 1. **DigitalOcean is retired.** Do not provision or keep DO resources. The
    ParsSwim droplet is to be retired after cutover.
-2. **All Azure resources live in `germanywestcentral`.** This is a hard
-   subscription constraint discovered on VioletWatch — not a preference.
-3. **AWS credit is protected, not spent on compute.** The account has a new
-   promotional tier: **$100 credit, 181 days remaining (2026-11-03)**. No
-   EC2/EIP/NAT/ALB. AWS usage is limited to S3 (pennies/month) and backups.
-4. **Compute must be $0 for 12–24 months.** Use the untouched Azure for Students
-   Linux VM (`B2ats_v2` preferred, `B1s` fallback). Vercel + Heroku is a
-   fallback only.
-5. **Live production must run at $0/month** after student entitlements; credits
-   must not be required to keep the site up.
-6. **Real AWS S3 in production, LocalStack locally.** The storage layer uses
-   `@aws-sdk/client-s3`; it must run against LocalStack (Docker/WSL 2) and real
-   S3 without code changes.
-7. **Database moves off Atlas to a $0 alternative.** Chosen: **Azure Cosmos DB
-   for MongoDB free tier** (1000 RU/s + 25 GB), because the 1 GiB VM should not
-   also host MongoDB. Fallback if the free tier is unavailable/incompatible:
-   self-hosted MongoDB with a 0.25 GB WiredTiger cache + 2 GB swap.
+2. **All Azure resources live in Ireland (`northeurope`), as provisioned.**
+3. **Single $0 compute server.** Next.js, Express, Nginx, and PM2 run on one
+   Azure for Students VM (`B2ats_v2`, 1 GiB). MongoDB is external on the **Atlas
+   M0 free tier**, so the VM's RAM stays free for Node.
+4. **AWS is storage only, never compute.** The AWS account is an
+   Academy/education sandbox: EC2 is unavailable (`describe-instance-type-offerings`
+   returns empty), but S3 works. No EC2/EIP/NAT/ALB.
+5. **Live production must run at ~$0/month** within the 12-month student
+   entitlement; credits must not be required to keep the site up. AWS S3 stays at
+   pennies per month and Atlas M0 is free.
+6. **Storage uses the S3 API.** `@aws-sdk/client-s3` points at AWS S3, Cloudflare
+   R2, or LocalStack through canonical `S3_*` env vars; no code changes between
+   them.
+7. **Production storage needs long-lived credentials.** The sandbox CLI currently
+   uses temporary STS session credentials, so an IAM access key (or an R2 API
+   token fallback) is mandatory before launch.
 8. **Domain is `parsswim.dev` only.** The legacy `.ir` domain is expired and
    retired; do not plan registrar, nameserver, or DNS work for it.
 9. **Do not modify the live server or break it during planning.** Discovery is
@@ -46,12 +47,12 @@ Related playbook: [violetwatch-lessons-learned.md](violetwatch-lessons-learned.m
 
 ## Goals
 
-- Keep `parsswim.dev` / `www.parsswim.dev` online over HTTPS on a $0/month
+- Keep `parsswim.dev` / `www.parsswim.dev` online over HTTPS on a ~$0/month
   architecture.
 - Retire the DigitalOcean droplet without data loss (DB + 65 images).
-- Move the database from Atlas to Cosmos DB (or the self-hosted fallback) with
-  verified document counts.
-- Introduce a provider-agnostic S3 storage layer (real S3 in production,
+- Move the database from the old Atlas cluster to the new **Atlas M0** cluster with
+  verified counts.
+- Introduce a provider-agnostic S3 storage layer (AWS S3 production, R2 fallback,
   LocalStack in dev/CI).
 - Preserve existing behaviour: classes, products, cart, dashboard, admin CRUD,
   Zarinpal sandbox flow, Persian/English UI.
@@ -68,44 +69,45 @@ Related playbook: [violetwatch-lessons-learned.md](violetwatch-lessons-learned.m
 ## Success criteria
 
 1. `https://parsswim.dev` and `https://www.parsswim.dev` serve the app over HTTPS.
-2. `/` and the API health endpoint return 200; `database: connected` (Cosmos).
+2. `/` and the API health endpoint return 200; `database: connected` (Atlas).
 3. All 12 products, 4 classes, 4 users and 65 images are migrated and visible.
 4. Login (student/admin), admin product CRUD and image upload work end-to-end.
-5. Uploads are written to and read from S3 through the storage abstraction;
-   LocalStack passes the same tests locally.
-6. The DigitalOcean droplet is snapshotted, then destroyed; the Atlas cluster is
-   disabled after Cosmos verification.
-7. Monthly run-rate is **$0** for compute/database/DNS; AWS S3 stays **< $1/mo**.
-8. AWS credit usage stays negligible and no EC2 resource exists.
+5. Uploads are written to and read from AWS S3 (or R2) through the storage
+   abstraction; LocalStack passes the same tests locally.
+6. The DigitalOcean droplet is snapshotted, then destroyed; the old Atlas cluster
+   is retired after the new M0 cluster is verified.
+7. Monthly run-rate is **~$0** for compute/database/DNS, with AWS S3 **< $1**.
+8. No AWS compute resource exists; the AWS credit is not spent on EC2.
 
-## Decision (2026-11-03 — Phase 2)
+## Decision (2026-11-05 — Phase 2 revised)
 
 | Decision | Choice |
 | --- | --- |
-| Azure region | **`germanywestcentral`** (all resources) |
-| Compute | **Azure for Students Linux VM** (`B2ats_v2` / `B1s`), Nginx + PM2 — $0 for 12 months |
-| Compute fallback | Vercel (Next) + Heroku (Express) student credit — only if the Azure VM is unavailable |
-| Database | **Azure Cosmos DB for MongoDB free tier** (1000 RU/s + 25 GB) |
-| DB fallback | Self-hosted MongoDB on the VM, `wiredTigerCacheSizeGB: 0.25` + 2 GB swap |
-| Production object storage | **Amazon S3** (`parsswim-uploads` public, `parsswim-backups` private) via `@aws-sdk/client-s3` |
+| Azure region | **Ireland (`northeurope`)**, as provisioned |
+| Compute | **Azure for Students Linux VM** (`B2ats_v2`), Nginx + PM2 — $0 for 12 months |
+| Database | **MongoDB Atlas M0 free tier (Ireland)** — external, no DB on the VM |
+| Production object storage | **AWS S3 `eu-north-1`** (`parsswim-uploads` public, `parsswim-backups-amir` private) via `@aws-sdk/client-s3` |
+| Storage fallback | **Cloudflare R2** if the AWS IAM access-key check fails; same code, env-only switch |
 | Local/CI object storage | **LocalStack** + Docker (WSL 2) |
 | DNS / TLS | Cloudflare free, domain `parsswim.dev` only |
-| AWS credit | reserved for S3/backups; no compute |
+| AWS | **S3 only** — EC2 unavailable in the sandbox; no compute |
 | Legacy `.ir` domain | expired and retired — no action |
 
-Implication: the AWS credit is a storage/backup budget, not a hosting runway.
-The only compute deadline is the 12-month Azure student entitlement, mitigated
+Implication: AWS is the storage layer, Azure is the compute layer, and Atlas M0 is
+the database layer. No Docker or MongoDB runs on the Azure VM, leaving its 1 GiB
+for Node. The only deadline is the 12-month Azure student entitlement, mitigated
 by the month-10 exit to Azure App Service F1 (or the Vercel + Heroku split).
+Atlas M0 remains free.
 
 ## Open questions
 
-1. **Cosmos free tier:** confirm no other account in the subscription already
-   enabled it (one free tier per subscription).
-2. **S3 region/bucket:** confirm `eu-west-2` and whether `parsswim-uploads` may
-   be public-read (restricted to `uploads/*`) or should use presigned URLs.
-3. **Zarinpal:** keep sandbox during the migration or wire the production
+1. **Atlas access list:** confirm both the local public IP (for `mongorestore`)
+   and the Azure VM public IP are added in Atlas → Network Access.
+2. **Public base URL:** AWS virtual-hosted URL is chosen:
+   `https://parsswim-uploads.s3.eu-north-1.amazonaws.com`.
+3. **DNS:** Cloudflare zone is already delegated; switch the A records after the
+   VM passes local verification.
+4. **Zarinpal:** keep sandbox during the migration or wire the production
    merchant id?
-4. **Cutover window:** when to freeze writes and how long to keep the droplet as
+5. **Cutover window:** when to freeze writes and how long to keep the droplet as
    rollback (suggested 48 h)?
-5. **DNS:** is `parsswim.dev` already delegated to Cloudflare, or does it stay at
-   its current registrar?

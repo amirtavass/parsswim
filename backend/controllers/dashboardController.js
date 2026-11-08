@@ -3,6 +3,7 @@ let controller = require("./controller");
 const User = require("../models/user");
 const axios = require("axios");
 const payment = require("../models/payment");
+const storage = require("../lib/storage");
 
 module.exports = new (class DashboardController extends controller {
   async index(req, res, next) {
@@ -67,7 +68,13 @@ module.exports = new (class DashboardController extends controller {
       };
 
       if (req.file) {
-        data.img = req.file.path.replace(/\\/g, "/").substring(6);
+        const key = storage.buildUploadKey(req.file.originalname);
+        const uploaded = await storage.putObject(
+          key,
+          req.file.buffer,
+          req.file.mimetype,
+        );
+        data.img = `/${uploaded.key}`;
         console.log("Image path set:", data.img);
       }
 

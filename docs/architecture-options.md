@@ -1,18 +1,29 @@
-# ParsSwim — Architecture & Migration Plan (Multi-Cloud, $0/month)
+# ParsSwim — Architecture & Migration Plan (Azure compute, Atlas M0 database, S3 storage, $0/month)
 
-Definitive plan as of **2026-11-03** (Phase 2 provisioning decisions included).
+Definitive plan as of **2026-11-05** (Phase 2 final: Azure VM + MongoDB Atlas M0 +
+AWS S3, with Cloudflare R2 as the drop-in storage fallback).
 
 ## 1. Decision summary
 
 | Workload | Provider | Spec | Cost | Notes |
 | --- | --- | --- | --- | --- |
-| Frontend + backend compute | **Azure for Students — Linux VM** | `B2ats_v2` (2 vCPU / 1 GiB) preferred, `B1s` fallback; Ubuntu 24.04; region **`germanywestcentral`** | **$0 for 12 months** | Nginx + PM2, same layout as today. Region is mandatory per the student subscription. |
-| Database | **Azure Cosmos DB for MongoDB (free tier)** | RU-based Mongo API, **1000 RU/s + 25 GB**, region `germanywestcentral` | **$0** (one free-tier account per subscription) | Offloads the DB from the 1 GiB VM. Fallback: self-hosted MongoDB on the VM. |
-| Object storage — production | **Amazon S3** | `parsswim-uploads` (public read) + `parsswim-backups` (private) | **pennies/month** (≪ $1) | Real `@aws-sdk/client-s3`; LocalStack for local/CI. |
-| Object storage — local/CI | **LocalStack + Docker** | `http://localhost:4566`, path-style | $0 | Docker/WSL 2 not installed yet. |
+| Frontend + backend | **Azure for Students — Linux VM** | `B2ats_v2` (2 vCPU / 1 GiB), Ubuntu 24.04, region **Ireland (`northeurope`)** | **$0 for 12 months** | Nginx + PM2 only; no Docker, no local MongoDB. |
+| Database | **MongoDB Atlas M0 (free tier)** | Ireland; DB `parsswim`; DB user with `readWrite` | **$0** | External to the VM; saves the entire 1 GiB for Node. |
+| Object storage — production | **AWS S3, `eu-north-1`** (primary) | `parsswim-uploads` public, `parsswim-backups-amir` private | **pennies/month** | IAM user `parsswim-deploy`; S3 API via `@aws-sdk/client-s3`. |
+| Object storage — production fallback | **Cloudflare R2** | S3-compatible; 10 GB storage, zero egress | **$0** within free tier | Same code; only env changes. |
+| Object storage — local/CI | **LocalStack + Docker** | `http://localhost:4566`, path-style | $0 | Optional for local testing. |
 | DNS / TLS / proxy | **Cloudflare** | Free plan, proxied | $0 | `parsswim.dev` only. |
 | Legacy host | DigitalOcean droplet `161.35.174.84` | 1 vCPU / 1 GB | retire after cutover | Source of truth until cutover, then snapshot + destroy. |
-| AWS credit | reserved for S3/backups | $100, **181 days remaining** (2026-11-03) | not spent on compute | No EC2/EIP/NAT/ALB. |
+| AWS account | **S3 only** | IAM access key confirmed; EC2 unavailable | S3 pennies/month | No compute on AWS. |
+
+**AWS S3 is confirmed:** the `parsswim-deploy` IAM user with an access key was
+created, and the `parsswim-uploads` / `parsswim-backups-amir` buckets exist in
+`eu-north-1`. After the migration, replace `AmazonS3FullAccess` with a bucket-scoped
+policy.
+
+**Database is external:** the Azure VM does **not** run Docker or MongoDB. MongoDB
+Atlas M0 hosts the database, so the VM only runs Node.js 20, PM2, Nginx, and
+Certbot.
 
 **Domain policy:** `parsswim.dev` is the only production domain. The legacy `.ir`
 domain has expired and is retired — no registrar or DNS work.
@@ -21,64 +32,81 @@ domain has expired and is retired — no registrar or DNS work.
 
 ### 2.1 Region and SKU
 
-- **Region: `germanywestcentral` — mandatory.** All Azure resources (RG, VM, NSG,
-  public IP, Cosmos DB) go there because of the student-subscription constraints
-  found on VioletWatch.
-- **SKU: `B2ats_v2`** (2 vCPU / 1 GiB) preferred; **`B1s`** (1 vCPU / 1 GiB)
-  fallback. Verify with `az vm list-skus` before creating.
-- 1 GiB is tight: build Next.js off-VM, add 2 GB swap, cap Node heaps, and keep
-  the database off the VM.
+- **Region: Ireland (`northeurope`)** — the VM is already provisioned there.
+- **SKU: `B2ats_v2`** (2 vCPU / 1 GiB).
+- With MongoDB off the VM, the 1 GiB is reserved for Next.js, Express, PM2/Nginx,
+  and the OS. A 2 GB swap file remains as a build-time safety net.
 
-### 2.2 Database: Cosmos DB vs self-hosted MongoDB
+### 2.2 Database: MongoDB Atlas M0 (free tier)
 
-| Criterion | A — Cosmos DB for MongoDB (free tier) | B — Self-hosted MongoDB on the VM |
+| Criterion | A — Atlas M0 | B — Self-hosted MongoDB on the VM |
 | --- | --- | --- |
-| Cost | $0 within 1000 RU/s / 25 GB (one free account per subscription) | $0 (uses the VM) |
-| VM RAM impact | **none** (external) | ~150–250 MB for `mongod` + page cache pressure |
-| Compatibility | Mongo API (RU-based), not upstream MongoDB; TTL/index and transaction differences | Exact MongoDB 7 (Mongoose 7, `connect-mongo`) |
-| Ops | managed HA/backups | install/patch/backup yourself |
-| Billing risk | 0 if free tier available; RU overage possible | none |
-| Failure mode | free tier already used by another account → paid or blocked | OOM/swap thrash on 1 GiB |
+| Cost | $0 (512 MB–5 GB free tier) | $0 (uses the VM) |
+| VM RAM impact | **none** | ~150–250 MB + page cache |
+| Compatibility | Upstream MongoDB (Mongoose 7, `connect-mongo`) | Upstream MongoDB |
+| Ops | managed HA/patching; M0 has no automated cloud backups | install/patch/backup yourself |
+| Network | Atlas access list must include the VM public IP | loopback only |
+| Failure mode | M0 limits (shared CPU, 500 connections) | OOM/swap thrash on 1 GiB |
 
-**Decision: Alternative A — Azure Cosmos DB for MongoDB free tier.**
+**Decision: Atlas M0, external to the VM.**
 
 Rationale:
 
-1. The binding constraint is the **1 GiB VM**; Next.js + Express + Nginx already
-   use most of it. Keeping the DB external is the only comfortable fit.
-2. The app uses **simple CRUD only** — verified: no `aggregate`, `$lookup`,
-   transactions, or custom indexes. The risk of Mongo-API incompatibility is low.
-3. The data is tiny (12 products, 4 classes, 4 users, 0 payments), far inside
-   1000 RU/s and 25 GB.
-4. It removes DB backup/patching from the single VM.
+1. The dataset is tiny (12 products, 4 classes, 4 users, 0 payments), well inside
+   the M0 free limits.
+2. Keeping `mongod` off the 1 GiB VM removes the largest OOM risk.
+3. Exact upstream MongoDB compatibility for Mongoose 7 and `connect-mongo`.
+4. The VM stays a simple app host: Node, PM2, Nginx, Certbot.
 
-**Preflight is mandatory:** the Cosmos free tier is **one per subscription**. If
-another account already enabled it, Alternative A is no longer $0. In that case
-(or if Mongoose compatibility fails), fall back to **Alternative B**: self-hosted
-MongoDB with `wiredTigerCacheSizeGB: 0.25`, bound to `127.0.0.1`, 2 GB swap.
-The storage abstraction is unaffected either way.
+Operational notes:
 
-Caveats to verify during migration:
+- Add the **Azure VM public IP** and the **local public IP** (for the initial
+  restore) to Atlas → Network Access.
+- Connection string lives only in `backend/.env`:
+  `mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/parsswim?retryWrites=true&w=majority`
+- M0 has no automated cloud backups; keep periodic `mongodump` exports in
+  `parsswim-backups-amir`.
 
-- `connect-mongo` creates a TTL index on sessions; confirm Cosmos honours it
-  (if not, sessions simply accumulate slowly — schedule a cleanup).
-- RU-based Mongo API does not support every upstream feature; the current code
-  does not use any of the known gaps.
-- Do not use `db.createUser`; Cosmos authenticates with the account key.
+### 2.3 Storage: provider-agnostic S3 API (AWS S3 primary, R2 fallback)
+
+AWS is the **storage** layer only; compute stays on Azure. The storage layer uses
+canonical `S3_*` environment variables and `@aws-sdk/client-s3`, so the same code
+runs against AWS S3, Cloudflare R2, or LocalStack:
+
+| Concern | AWS S3 (primary) | Cloudflare R2 (fallback) | LocalStack |
+| --- | --- | --- | --- |
+| `S3_ENDPOINT` | empty | `https://<account-id>.r2.cloudflarestorage.com` | `http://localhost:4566` |
+| `S3_REGION` | `eu-north-1` | `auto` | `us-east-1` |
+| Credentials | IAM access key (long-lived) | R2 API token | `test` / `test` |
+| `S3_FORCE_PATH_STYLE` | `false` | `true` | `true` |
+| `S3_PUBLIC_BASE_URL` | `https://parsswim-uploads.s3.eu-north-1.amazonaws.com` | `https://uploads.parsswim.dev` (or `r2.dev`) | `http://localhost:4566/parsswim-uploads` |
+
+Legacy `AWS_*` and `R2_*` variable names are still read as fallbacks; new setups
+should use the canonical `S3_*` names. Temporary STS credentials are supported via
+`S3_SESSION_TOKEN` (or `AWS_SESSION_TOKEN`), but production uses the long-lived IAM
+access key.
+
+| Bucket | Access | Contents |
+| --- | --- | --- |
+| `parsswim-uploads` | Public read for `uploads/*` only | product/class/user images |
+| `parsswim-backups-amir` | Private (credentials only) | `mongodump` archives under `Backup/YYYY-MM-DD/` |
+
+**Images are served browser → S3 directly**, not proxied through Azure, so there
+is no meaningful Azure↔S3 egress (only small backup/restore traffic).
 
 ## 3. Why this split
 
-- **AWS credit is protected.** EC2 would burn ~$11/month; S3 for this workload is
-  < $1/month, so the credit lasts far beyond its 181-day window.
-- **Azure single-origin compute keeps cookies/sessions/callbacks working.** Nginx
-  routes `/` → Next `:3000` and `/api/` → Express `:4000`.
-- **Vercel + Heroku is only a fallback.** Vercel Hobby forbids commercial use,
-  the split complicates cross-site cookies/CORS, and the Heroku credit expires
-  after 24 months.
-- **Real S3 beats R2 here.** With active credit, native S3 is genuinely used at
-  negligible cost; R2 remains a drop-in fallback because both use the S3 API.
+- **Azure is compute only.** Next.js, Express, Nginx, PM2, Certbot. No Docker, no
+  MongoDB.
+- **Atlas M0 is the database.** Managed, free, and off the 1 GiB VM.
+- **AWS S3 is object storage.** Real AWS usage for the portfolio; images bypass
+  Azure.
+- **Storage is provider-agnostic.** AWS S3 and R2 use identical
+  `@aws-sdk/client-s3` code; LocalStack validates the same path locally.
+- **Vercel + Heroku is only a fallback**; a single VM keeps same-origin cookies,
+  sessions, and Zarinpal callbacks working with no rewrite.
 
-## 4. Current state (audited 2026-11-01, verified 2026-11-03)
+## 4. Current state (audited 2026-11-01, verified 2026-11-05)
 
 ### Application
 
@@ -86,9 +114,10 @@ Caveats to verify during migration:
 | --- | --- |
 | Frontend | Next.js 15.1 (React 18), App Router, Tailwind; `next start` on `:3000` |
 | Backend | Express 4 on `:4000`, Passport + JWT, `express-session` stored in Mongo |
-| Database | **currently Atlas** `parsswim-cluster` — migration target is Cosmos free tier |
+| Database | **old Atlas** `parsswim-cluster` — migration target is the new **Atlas M0** |
 | DB collections | `products` 12, `classes` 4, `users` 4, `payment` 0, `sessions` 0 |
-| Files | Multer `diskStorage` on the droplet, `backend/public/uploads/images` — 65 files, 7,893,221 bytes |
+| Files (legacy) | Multer `diskStorage` on the droplet, `backend/public/uploads/images` — 65 files, 7,893,221 bytes |
+| Upload path (new) | Multer `memoryStorage` → `backend/lib/storage.js` → S3-compatible store; local-disk fallback when S3 env is absent |
 | Payments | Zarinpal sandbox merchant id hardcoded in `server.js` |
 | Deploy | PM2 (`parsswim-backend`, `parsswim-frontend`) + Nginx; Certbot |
 
@@ -100,6 +129,7 @@ Caveats to verify during migration:
 | Domain | `parsswim.dev` / `www.parsswim.dev` → this IP; TLS valid until 2026-12-29 |
 | SSH | `root@161.35.174.84` with `~/.ssh/id_ed25519` |
 | Status | `https://parsswim.dev/` → 200, `/api/` → 200, HTTP → 301 |
+| New VM | Azure `B2ats_v2` in Ireland (`northeurope`), Ubuntu 24.04 |
 
 ### Backups completed (2026-11-03)
 
@@ -112,11 +142,13 @@ Caveats to verify during migration:
 
 | Item | State |
 | --- | --- |
-| Azure CLI | installed (`az`) |
-| Docker | **not installed** |
-| WSL 2 | present, but **no distribution installed** → LocalStack needs `wsl --install -d Ubuntu` + Docker Engine, or Docker Desktop |
-| AWS CLI | not installed (not required; the SDK uses env vars) |
-| AWS keys | injected into a git-ignored `.env` only (use `scripts/init-aws-env.ps1`); never commit |
+| Azure CLI | installed and authenticated (`Azure for Students`) |
+| Docker | **not installed** locally (not needed for the VM) |
+| MongoDB Database Tools | **not installed**; download the Windows zip for the Atlas restore |
+| AWS CLI | not required locally; Node scripts use the SDK |
+| AWS S3 | **working** — `parsswim-uploads` and `parsswim-backups-amir` exist in `eu-north-1` |
+| S3 keys | injected into a git-ignored `.env` only (`scripts/init-s3-env.ps1`); never commit |
+| Atlas | M0 free cluster in Ireland, DB `parsswim` |
 
 ## 5. Target architecture
 
@@ -126,164 +158,161 @@ Browser
 Cloudflare (DNS, TLS, proxy, caching) — parsswim.dev / www.parsswim.dev
   |
   v
-Azure Linux VM — germanywestcentral (Ubuntu 24.04, Nginx)
-  /        -> Next.js :3000      (PM2)
-  /api/    -> Express :4000      (PM2)
+Azure Linux VM — Ireland / northeurope (Ubuntu 24.04, Nginx)
+  /        -> Next.js :3000        (PM2)
+  /api/    -> Express :4000        (PM2)
   /uploads -> 302 -> S3 public URL
   |
-  +--> Azure Cosmos DB for MongoDB (free tier, same region)
-  +--> Amazon S3
-         parsswim-uploads  (public read: images)
-         parsswim-backups  (private: mongodump, lifecycle 30-90 days)
+  +--> MongoDB Atlas M0 (external, Ireland)
+  +--> AWS S3 eu-north-1
+         parsswim-uploads      (public: images)
+         parsswim-backups-amir (private: mongodump)
 
-Local dev / CI: LocalStack in Docker (WSL 2) emulates the same S3 API.
+Browser --(images, direct)--> AWS S3
+
+No Docker and no MongoDB process run on the VM.
+Local dev / CI: LocalStack in Docker emulates the same S3 API.
 ```
 
-## 6. Compute — Azure (germanywestcentral)
+## 6. Compute — Azure (Ireland)
 
 | Aspect | Detail |
 | --- | --- |
-| SKU | `B2ats_v2` preferred; `B1s` fallback |
-| Region | `germanywestcentral` (mandatory) |
+| SKU | `B2ats_v2` (fallback `B1s`) |
+| Region | Ireland (`northeurope`) |
 | OS | Ubuntu 24.04 LTS |
-| Runtime | Node 20 via `nvm`, PM2, Nginx |
-| Memory | 2 GB swap; build Next.js locally/CI, never on the VM |
-| Network | NSG: 22 from home IP, 80/443 from the internet/Cloudflare; 3000/4000 closed |
-| Public IP | Standard SKU, static (needed for DNS + Cosmos allowlist) |
-| Cost | $0 for 12 months of student free services; Azure credit covers month 13+ |
-| Exit ramp | Month 10: Azure App Service F1 (always free) or the Vercel + Heroku split |
+| Runtime | Node 20, PM2, Nginx, Certbot |
+| Memory | 2 GB swap, `vm.swappiness=10`; Node heap caps for builds |
+| Network | NSG: 22 from home IP, 80/443 public; 3000/4000 closed externally |
+| Public IP | Standard SKU, static (needed for DNS) |
+| Cost | $0 for 12 months of student free services |
+| Exit ramp | Month 10: Azure App Service F1 (always free) or Vercel + Heroku; Atlas and S3 are unchanged |
 
-## 7. Object storage — Amazon S3 + LocalStack
-
-### Buckets
-
-| Bucket | Access | Contents | Lifecycle |
-| --- | --- | --- | --- |
-| `parsswim-uploads` | Public read restricted to `uploads/*` | product/class/user images | none |
-| `parsswim-backups` | Private (Block Public Access on) | `mongodump` archives under `Backup/YYYY-MM-DD/` | expire after 30–90 days |
+## 7. Object storage — S3-compatible (AWS S3 primary / R2 fallback)
 
 ### Design (implemented in `backend/lib/storage.js`)
 
 1. `putObject(key, buffer, contentType)` and `deleteObject(key)` wrap
-   `@aws-sdk/client-s3`; when S3 env vars are absent they fall back to local disk
-   so `npm run dev` still works without LocalStack.
+   `@aws-sdk/client-s3`. The client is built from `S3_ENDPOINT`, `S3_REGION`,
+   `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`; legacy `AWS_*`/`R2_*` names are
+   accepted as fallbacks. When credentials are absent the functions fall back to
+   local disk so `npm run dev` still works.
 2. Multer uses `memoryStorage` (5 MB cap, image MIME filter); the DB keeps storing
    `/uploads/images/<name>` for URL compatibility.
-3. `GET /uploads/*` redirects (302) to the S3 public URL when configured;
+3. `GET /uploads/*` redirects (302) to the public S3/R2 URL when configured;
    otherwise it serves the local folder.
-4. File migration copies `backups/uploads/images/` (65 files) into
-   `parsswim-uploads/uploads/images/` and verifies checksums.
-5. Nightly `mongodump` is uploaded to `parsswim-backups` (tested against
-   LocalStack first).
+4. `scripts/migrate-uploads-to-s3.js` uploads the 65 images and verifies size/MD5.
+5. Backups: `mongodump --gzip` exports are uploaded to `parsswim-backups-amir`
+   (M0 has no automated cloud backups).
 
-### Configuration matrix
+### Migration tooling
 
-| Variable | LocalStack | Production (AWS S3) |
-| --- | --- | --- |
-| `AWS_REGION` | `us-east-1` | `eu-west-2` (confirm) |
-| `S3_ENDPOINT` | `http://localhost:4566` | *(unset — native AWS)* |
-| `S3_FORCE_PATH_STYLE` | `true` | `false` |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | `test` / `test` | IAM user keys (never in repo) |
-| `S3_UPLOADS_BUCKET` | `parsswim-uploads` | `parsswim-uploads` |
-| `S3_BACKUPS_BUCKET` | `parsswim-backups` | `parsswim-backups` |
-| `S3_PUBLIC_BASE_URL` | `http://localhost:4566/parsswim-uploads` | `https://parsswim-uploads.s3.eu-west-2.amazonaws.com` |
+| Script | Purpose |
+| --- | --- |
+| `scripts/setup-azure-vm.sh` | Provisions the Ubuntu 24.04 app host: Node 20, PM2, Nginx, Certbot, 2 GB swap, UFW. No Docker/MongoDB. |
+| `scripts/init-s3-env.ps1` | Injects canonical `S3_*` values into `backend/.env` (hidden secret input; can import from an existing `.env` with `-SourceEnvFile`). |
+| `scripts/migrate-uploads-to-s3.js` | Uploads `backups/uploads/images/` to `S3_UPLOADS_BUCKET` with per-file size/MD5 verification. Supports `--dry-run`. |
+| `scripts/backup-db-to-s3.js` | Runs `mongodump --gzip --archive` (or tars an existing dump with `--dir`), uploads to `S3_BACKUPS_BUCKET` under `Backup/YYYY-MM-DD/`, verifies size. Supports `--file`, `--dir`, `--dry-run`. |
 
-### IAM least privilege
+### Canonical configuration
 
-IAM user `parsswim-deploy` (no console access):
+| Variable | AWS S3 | Cloudflare R2 | LocalStack |
+| --- | --- | --- | --- |
+| `S3_ENDPOINT` | *(empty)* | `https://<account_id>.r2.cloudflarestorage.com` | `http://localhost:4566` |
+| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | IAM access key (never in repo) | R2 API token (never in repo) | `test` / `test` |
+| `S3_REGION` | `eu-north-1` | `auto` | `us-east-1` |
+| `S3_FORCE_PATH_STYLE` | `false` | `true` | `true` |
+| `S3_UPLOADS_BUCKET` | `parsswim-uploads` | `parsswim-uploads` | `parsswim-uploads` |
+| `S3_BACKUPS_BUCKET` | `parsswim-backups-amir` | `parsswim-backups-amir` | `parsswim-backups-amir` |
+| `S3_PUBLIC_BASE_URL` | `https://parsswim-uploads.s3.eu-north-1.amazonaws.com` | `https://uploads.parsswim.dev` (or `r2.dev`) | `http://localhost:4566/parsswim-uploads` |
 
-- `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` on
-  `arn:aws:s3:::parsswim-uploads/uploads/*`
-- `s3:PutObject`, `s3:GetObject`, `s3:ListBucket` on `parsswim-backups/*`
-- no `s3:*`, no bucket deletion, no IAM rights.
-
-## 8. Database — Azure Cosmos DB for MongoDB (free tier)
+## 8. Database — MongoDB Atlas M0
 
 | Aspect | Detail |
 | --- | --- |
-| API | Cosmos DB for MongoDB (RU-based), `--kind MongoDB --capabilities EnableMongo` |
-| Region | `germanywestcentral` |
-| Free tier | 1000 RU/s + 25 GB; `--enable-free-tier` (preview) |
-| Throughput | shared 1000 RU/s on the `parsswim` database |
-| Auth | account key in `MONGODB_URL` (Cosmos has no `db.createUser`) |
-| Collections | `products`, `classes`, `users`, `payment`, `sessions` |
-| Backups | `mongodump` → S3 (`parsswim-backups`) |
-
-Connection string shape (append `/parsswim` to the path):
-
-```
-mongodb://<account>:<key>@<account>.mongo.cosmos.azure.com:10255/parsswim?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@<account>@
-```
+| Tier | Atlas **M0** free cluster, Ireland |
+| Database | `parsswim` |
+| DB user | `readWrite` on `parsswim` (used by the app) |
+| Network access | Azure VM public IP + local public IP (for restore) |
+| Connection | `mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/parsswim?retryWrites=true&w=majority` |
+| Restore | `mongorestore --gzip` from local Windows using MongoDB Database Tools |
+| Backup | periodic `mongodump` → `parsswim-backups-amir` (M0 has no automated cloud backups) |
+| Limits | shared CPU, 512 MB–5 GB storage, ~500 connections — well above this app's needs |
 
 ## 9. Domain, DNS and TLS
 
 - **Only** `parsswim.dev` and `www.parsswim.dev` are served.
 - Cloudflare free zone: proxied records to the Azure static public IP.
-- TLS: Cloudflare Origin CA certificate on Nginx, or Let's Encrypt; **Full
-  (strict)**; HSTS after verification.
-- Images resolve to the S3 public URL
-  (`parsswim-uploads.s3.eu-west-2.amazonaws.com`).
+- TLS: Let's Encrypt via Certbot on Nginx (DNS-only during issuance), then
+  Cloudflare **Full (strict)** with the proxy re-enabled.
+- Images resolve to the S3 virtual-hosted URL
+  (`https://parsswim-uploads.s3.eu-north-1.amazonaws.com/...`).
 
 ## 10. Cost model
 
 | Resource | Spec | Est. / month |
 | --- | --- | --- |
-| Azure Linux VM | `B2ats_v2`/`B1s`, `germanywestcentral` | **$0** (12-month student free services) |
-| Azure Cosmos DB | Mongo API, 1000 RU/s + 25 GB | **$0** (free tier) |
-| Amazon S3 | ~10 MB objects, low requests | **< $1** |
-| Data transfer | Cloudflare proxy + small image traffic | ~$0 |
+| Azure Linux VM | `B2ats_v2`, Ireland | **$0** (12-month student free services) |
+| MongoDB Atlas M0 | free tier | **$0** |
+| AWS S3 (primary) | 2 buckets, ~8 MB uploads + small backups | **< $1** (pennies) |
+| Cloudflare R2 (fallback) | 10 GB storage, zero egress | **$0** (free tier) |
 | Cloudflare DNS/proxy | Free plan | $0 |
-| **Total** | | **≈ $0 out of pocket; AWS credit barely touched** |
+| **Total** | | **~$0/month** |
 
 ## 11. Guardrails
 
-1. AWS root: MFA on, no root access keys; use the least-privilege IAM user.
-2. AWS Budgets alarms at **$5 and $10**, hard spend limit on; no EC2/EIP/NAT/ALB.
-3. Azure budget alert on the student subscription (VM + Cosmos).
-4. Verify the Cosmos free tier is available **before** creating the account.
-5. Tag resources `Project=parsswim`.
-6. Rotate the old Atlas credential, then disable the Atlas cluster once Cosmos is
-   verified.
-7. Store all credentials outside the repo (`.env` on the VM, local `.env`).
+1. **No AWS compute.** EC2 is unavailable; do not attempt EC2/EIP/NAT/ALB.
+2. Replace `AmazonS3FullAccess` with a bucket-scoped IAM policy after launch;
+   rotate the access key if leaked.
+3. `parsswim-uploads` is public-read **only** for `uploads/*`;
+   `parsswim-backups-amir` stays private.
+4. Atlas access list includes only the VM public IP and the local admin IP; never
+   `0.0.0.0/0` long-term.
+5. Azure budget alert on the student subscription.
+6. No Docker or MongoDB on the VM; nothing listens on 27017.
+7. Rotate the old Atlas credential, then retire the old `parsswim-cluster` after
+   the new M0 is verified.
+8. Store all credentials outside the repo (`.env` on the VM, local `.env`).
 
 ## 12. Migration order
 
 0. **Hygiene** — dedupe `backend/` vs `parsswim-backend/`, consolidate env files,
    remove hardcoded domains/Railway from code, rotate the old DB credential.
-   *(scrub committed)*
 1. **Storage abstraction** — `lib/storage.js`, Multer memory storage, `/uploads`
-   redirect. *(initial implementation done; LocalStack test pending)*
-2. **LocalStack locally** — install a WSL distro + Docker Engine (or Docker
-   Desktop), then `awslocal s3 mb` and an upload smoke test.
-3. **Azure VM** — RG, NSG, `B2ats_v2`/`B1s` in `germanywestcentral`, static IP,
-   2 GB swap, Node 20, PM2, Nginx.
-4. **Cosmos DB** — preflight free tier, create account + database, restore the
-   2026-11-03 dump, verify counts (12/4/4/0/0).
-5. **S3** — create/confirm buckets + IAM user, migrate the 65 images, verify.
-6. **Cloudflare** — zone for `parsswim.dev`, proxied records to the VM, Origin CA,
-   Full (strict).
-7. **Cutover** — freeze writes, final `mongodump` to S3, deploy, verify `/` and
-   `/api/health`, keep the droplet 48 h for rollback, then snapshot and destroy.
-8. **Post** — nightly `mongodump` → S3, uptime monitor, budget review, month-10
+   redirect, provider-agnostic `S3_*` env, `scripts/init-s3-env.ps1`. *(done)*
+2. **AWS S3** — IAM user + access key, buckets, upload images, verify. *(done)*
+3. **Azure VM** — `B2ats_v2` in Ireland, Node 20, PM2, Nginx, Certbot, swap, UFW.
+   *(VM live; run `scripts/setup-azure-vm.sh`)*
+4. **Atlas M0** — create the DB user and network access; restore the 2026-11-03
+   dump from local Windows with `mongorestore`; verify counts (12/4/4/0/0).
+5. **App deploy** — clone repo, transfer `.env` files, build Next.js, start both
+   PM2 processes.
+6. **Cloudflare** — point `parsswim.dev`/`www` to the VM, run Certbot (DNS-only),
+   then re-enable the proxy with Full (strict).
+7. **Cutover** — freeze writes, final `mongodump` to S3, verify `/` and `/api/`,
+   keep the droplet 48 h for rollback, then snapshot and destroy.
+8. **Post** — periodic `mongodump` → S3, uptime monitor, budget review, month-10
    compute exit ramp.
 
 ## 13. Risks
 
-- **Cosmos free tier already used** → Alternative A becomes paid; check first,
-  fall back to self-hosted MongoDB.
-- **Cosmos Mongo API differences** → TTL/sessions and `mongorestore` behaviour
-  must be verified; current queries are simple CRUD.
-- **1 GiB RAM** → Next.js builds can OOM; build off-VM, add swap, cap heaps.
-- **`germanywestcentral` capacity/SKU** → verify `B2ats_v2`/`B1s` availability.
-- **S3 public bucket abuse** → policy scoped to `uploads/*`, backups private.
+- **1 GiB RAM during Next.js build** → 2 GB swap plus `NODE_OPTIONS=--max-old-space-size=768`;
+  build locally if the VM still OOMs.
+- **Atlas M0 limits** → shared CPU and ~500 connections; fine for this workload,
+  but avoid connection storms (one PM2 backend instance).
+- **Atlas access list** → the VM cannot connect until its public IP is added.
+- **S3 public bucket policy** → public-read must be limited to `uploads/*`.
+- **Public bucket names** → `parsswim-uploads` must be globally unique; adjust if
+  creation fails.
 - **Zarinpal callbacks** → must resolve through `parsswim.dev`; verify from Iran.
-- **Only one 12-month compute window** → month-10 exit ramp is mandatory, but it
-  is a compute-only move (data/storage stay put).
+- **Only one 12-month compute window** → month-10 exit ramp is mandatory; Atlas
+  and S3 are unaffected.
 
 ## 14. Open decisions
 
-1. Confirm the Cosmos free tier is available in the subscription.
-2. S3 region (`eu-west-2` suggested) and public-read versus presigned images.
-3. Zarinpal: keep sandbox during migration or wire the production merchant id.
-4. Cutover window and write-freeze duration.
-5. Whether `parsswim.dev` DNS is already on Cloudflare or stays at its registrar.
+1. **TLS path:** Certbot + Cloudflare Full (strict) (current plan) vs Cloudflare
+   Origin CA.
+2. **IAM hardening:** replace `AmazonS3FullAccess` with a bucket-scoped policy.
+3. **Zarinpal:** keep sandbox during migration or wire the production merchant id.
+4. **Cutover window:** when to freeze writes and how long to keep the droplet as
+   rollback (suggested 48 h).
